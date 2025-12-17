@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.DocumentMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.Document">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="uploaderId" column="uploader_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="storedFilename" column="stored_filename"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, uploader_id, create_time, stored_filename
+    </sql>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.Document" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO document
+        (name, uploader_id, stored_filename, create_time)
+        VALUES
+        (#{name}, #{uploaderId}, #{storedFilename}, NOW())
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM document
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectAllOrderByTime" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM document
+        ORDER BY create_time DESC
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM document WHERE id = #{id}
+    </delete>
+
+    <update id="updateStoredFilename">
+        UPDATE document
+        SET stored_filename = #{storedFilename}
+        WHERE id = #{id}
+    </update>
+</mapper>

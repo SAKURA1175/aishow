@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  用户表 Mapper XML 配置
+  对应接口：com.xxzd.study.mapper.UserMapper
+  对应数据表：user
+-->
+<mapper namespace="com.xxzd.study.mapper.UserMapper">
+
+    <!-- 公共字段映射，避免重复书写列名 -->
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="role" column="role"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 基本列列表，便于 SQL 复用 -->
+    <sql id="Base_Column_List">
+        id, username, password, role, create_time
+    </sql>
+
+    <!-- 根据主键 ID 查询用户 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectByUsername" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <!-- 插入新用户记录 -->
+    <insert id="insert" parameterType="com.xxzd.study.domain.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user
+        (username, password, role, create_time)
+        VALUES
+        (#{username}, #{password}, #{role}, NOW())
+    </insert>
+</mapper>

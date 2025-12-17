@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--
+  MyBatis 全局配置文件
+  主要职责：
+  1. 配置 MyBatis 行为参数（下划线转驼峰等）
+  2. 统一管理别名、插件等
+-->
+<configuration>
+    <!-- 全局设置 -->
+    <settings>
+        <!-- 开启驼峰命名自动映射（user_name -> userName） -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 控制台打印 SQL，便于开发调试 -->
+        <setting name="logImpl" value="STDOUT_LOGGING"/>
+    </settings>
+</configuration>
+

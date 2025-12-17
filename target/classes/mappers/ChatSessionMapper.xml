@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.ChatSessionMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.ChatSession">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, title, create_time
+    </sql>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.ChatSession" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_session (user_id, title, create_time)
+        VALUES (#{userId}, #{title}, NOW())
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM chat_session
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM chat_session
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+</mapper>

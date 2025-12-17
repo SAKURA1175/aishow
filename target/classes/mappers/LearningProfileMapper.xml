@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.LearningProfileMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.LearningProfile">
+        <id property="userId" column="user_id"/>
+        <result property="weakTopics" column="weak_topics"/>
+        <result property="strongTopics" column="strong_topics"/>
+        <result property="suggestion" column="suggestion"/>
+    </resultMap>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT user_id, weak_topics, strong_topics, suggestion
+        FROM learning_profile
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.LearningProfile">
+        INSERT INTO learning_profile (user_id, weak_topics, strong_topics, suggestion)
+        VALUES (#{userId}, #{weakTopics}, #{strongTopics}, #{suggestion})
+    </insert>
+
+    <update id="update" parameterType="com.xxzd.study.domain.LearningProfile">
+        UPDATE learning_profile
+        SET weak_topics = #{weakTopics},
+            strong_topics = #{strongTopics},
+            suggestion = #{suggestion}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

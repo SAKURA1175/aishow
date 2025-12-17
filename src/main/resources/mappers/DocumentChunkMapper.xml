@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.DocumentChunkMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.DocumentChunk">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="content" column="content"/>
+        <result property="chunkIndex" column="chunk_index"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, document_id, content, chunk_index
+    </sql>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO document_chunk (document_id, content, chunk_index)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.documentId}, #{item.content}, #{item.chunkIndex})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByDocumentId">
+        DELETE FROM document_chunk WHERE document_id = #{documentId}
+    </delete>
+
+    <select id="selectByKeywordsLike" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM document_chunk
+        <where>
+            <foreach collection="keywords" item="kw" separator=" OR ">
+                content LIKE CONCAT('%', #{kw}, '%')
+            </foreach>
+        </where>
+        ORDER BY
+        (
+            <foreach collection="keywords" item="kw" separator=" + ">
+                CASE WHEN content LIKE CONCAT('%', #{kw}, '%') THEN 1 ELSE 0 END
+            </foreach>
+        ) DESC,
+        id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

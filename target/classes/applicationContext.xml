@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spring 根容器配置文件
+  主要职责：
+  1. 扫描 Service / Mapper 等业务 Bean
+  2. 配置数据源与事务管理
+  3. 集成 MyBatis
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 组件扫描：只扫描 Service、Mapper、配置类等非 Controller bean -->
+    <context:component-scan base-package="com.xxzd.study">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+        <context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.RestController"/>
+    </context:component-scan>
+
+    <!-- 加载数据库、Redis 等配置文件 -->
+    <context:property-placeholder location="classpath:db.properties,classpath:redis.properties"/>
+
+    <!-- AI HTTP 客户端配置 -->
+    <bean id="aiHttpClient" class="com.xxzd.study.ai.AiHttpClient">
+        <constructor-arg name="baseUrl" value="${ai.api.url}"/>
+        <constructor-arg name="apiKey" value="${ai.api.key}"/>
+    </bean>
+
+    <!-- 数据源配置：使用 Spring 自带 DriverManagerDataSource，后续可替换为连接池 -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <!-- MyBatis SqlSessionFactory 配置 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- MyBatis 全局配置文件 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <!-- 扫描实体类别名所在包，便于在 Mapper 中直接使用类名 -->
+        <property name="typeAliasesPackage" value="com.xxzd.study.domain"/>
+        <!-- 扫描 Mapper XML 文件 -->
+        <property name="mapperLocations" value="classpath*:mappers/**/*.xml"/>
+    </bean>
+
+    <!-- Mapper 接口扫描器：自动为接口创建代理对象 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.xxzd.study.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- 事务管理器配置 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 开启注解驱动事务管理（@Transactional） -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- Redis 连接工厂：默认连接本地 Redis，账号无密码 -->
+    <bean id="redisConnectionFactory"
+          class="org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory">
+        <constructor-arg value="${redis.host}"/>
+        <constructor-arg value="${redis.port}"/>
+    </bean>
+
+    <!-- StringRedisTemplate：用于存储简单字符串，例如 Session 与对话上下文 -->
+    <bean id="stringRedisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <constructor-arg ref="redisConnectionFactory"/>
+    </bean>
+
+    <!-- 数据库初始化器：启动时检查并添加缺失的表列 -->
+    <bean id="databaseInitializer" class="com.xxzd.study.config.DatabaseInitializer">
+        <constructor-arg ref="dataSource"/>
+    </bean>
+</beans>
