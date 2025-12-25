@@ -34,4 +34,8 @@
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
     </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM chat_session WHERE user_id = #{userId}
+    </delete>
 </mapper>

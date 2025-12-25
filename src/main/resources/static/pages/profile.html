@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>学习画像 - 学业辅助平台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../js/modal.js"></script>
+    <style>
+        .layout { display: flex; height: 100vh; width: 100vw; }
+        .main-area { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-color); }
+        
+        /* 图谱容器 */
+        .graph-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-color);
+            transition: background 0.5s ease;
+        }
+        
+        /* 沉浸模式背景 */
+        .graph-wrapper.immersive {
+            background: linear-gradient(135deg, #0c0c1e 0%, #1a1a2e 50%, #16213e 100%);
+        }
+        
+        #canvas-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        
+        .graph-wrapper.immersive #canvas-bg {
+            opacity: 1;
+        }
+        
+        #graph-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+        
+        /* 信息面板 */
+        .info-panel {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 220px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 50;
+            transition: all 0.3s;
+        }
+        
+        .graph-wrapper.immersive .info-panel {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .panel-title {
+            color: var(--primary-btn);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        
+        .stat-value { color: var(--text-primary); font-weight: 500; }
+        
+        .graph-wrapper.immersive .stat-row { color: #aaa; }
+        .graph-wrapper.immersive .stat-value { color: #fff; }
+        
+        /* 工具栏 */
+        .graph-toolbar {
+            position: absolute;
+            top: 20px; right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+        }
+        
+        .tool-btn {
+            padding: 8px 16px;
+            background: var(--button-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .tool-btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-1px);
+        }
+        
+        .tool-btn.active {
+            background: var(--primary-btn);
+            color: white;
+            border-color: var(--primary-btn);
+        }
+        
+        .graph-wrapper.immersive .tool-btn {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        .graph-wrapper.immersive .tool-btn:hover {
+            background: rgba(16,163,127,0.3);
+            border-color: #10a37f;
+        }
+        
+        .graph-wrapper.immersive .tool-btn.active {
+            background: #10a37f;
+        }
+        
+        /* 图例 */
+        .legend-panel {
+            position: absolute;
+            bottom: 20px; left: 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            z-index: 50;
+            transition: all 0.3s;
+        }
+        
+        .graph-wrapper.immersive .legend-panel {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+        
+        .graph-wrapper.immersive .legend-item { color: #888; }
+        
+        .legend-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+        
+        .graph-wrapper.immersive .legend-dot {
+            box-shadow: 0 0 6px currentColor;
+        }
+        
+        /* 提示 */
+        .hint-panel {
+            position: absolute;
+            bottom: 20px; right: 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            z-index: 50;
+            transition: all 0.3s;
+        }
+        
+        .graph-wrapper.immersive .hint-panel {
+            background: rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.1);
+            color: #666;
+        }
+        
+        .hint-panel span { color: var(--primary-btn); }
+        
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: var(--input-bg);
+            border: 1px solid var(--primary-btn);
+            color: var(--text-primary);
+            border-radius: 10px;
+            padding: 12px 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: var(--shadow-md);
+            min-width: 140px;
+        }
+        
+        .graph-wrapper.immersive .tooltip {
+            background: rgba(0,0,0,0.95);
+            box-shadow: 0 8px 32px rgba(16,163,127,0.3);
+        }
+        
+        .tooltip-name { font-weight: 600; margin-bottom: 6px; }
+        .tooltip-cat { color: var(--primary-btn); font-size: 12px; margin-bottom: 6px; }
+        .tooltip-count { color: var(--text-secondary); font-size: 12px; }
+        .graph-wrapper.immersive .tooltip-count { color: #888; }
+        
+        /* 加载 */
+        .loading {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+        }
+        
+        .loading-ring {
+            width: 50px; height: 50px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-btn);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        .loading-text { color: var(--text-secondary); font-size: 14px; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 沉浸模式隐藏侧边栏 */
+        body.immersive-mode .sidebar { display: none; }
+        body.immersive-mode .app-topbar { display: none; }
+        body.immersive-mode .main-area { border-radius: 0; }
+        
+        /* 返回按钮（沉浸模式下显示） */
+        .exit-immersive {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+            transition: all 0.3s;
+        }
+        
+        .exit-immersive:hover {
+            background: rgba(16,163,127,0.5);
+            border-color: #10a37f;
+        }
+        
+        body.immersive-mode .exit-immersive { display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <button class="new-chat-btn" onclick="location.href='chat.html'"><span>+</span> 新建对话</button>
+        </div>
+        <div class="nav-links">
+            <a href="chat.html" class="nav-item"><span>💬</span> 智能问答</a>
+            <a href="documents.html" class="nav-item"><span>📄</span> 文档库</a>
+            <a href="profile.html" class="nav-item active"><span>👤</span> 学习画像</a>
+            <a href="history.html" class="nav-item"><span>🕒</span> 历史记录</a>
+        </div>
+        <div class="user-menu">
+            <div class="nav-item" onclick="logout()"><span>🚪</span> 退出登录</div>
+        </div>
+    </div>
+    
+    <!-- 主区域 -->
+    <div class="main-area">
+        <div class="app-topbar">
+            <button class="icon-btn sidebar-toggle" id="sidebarToggle" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <div class="topbar-title">学习画像 · 知识星图</div>
+            <div class="topbar-spacer"></div>
+            <button class="icon-btn" id="themeToggle" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.7 6.7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="graph-wrapper" id="graphWrapper">
+            <canvas id="canvas-bg"></canvas>
+            <svg id="graph-svg"></svg>
+            
+            <div class="info-panel">
+                <div class="panel-title">📊 学习概况</div>
+                <div class="stat-row"><span>总提问数</span><span class="stat-value" id="statTotal">-</span></div>
+                <div class="stat-row"><span>知识领域</span><span class="stat-value" id="statDomains">-</span></div>
+                <div class="stat-row"><span>🔴 薄弱领域</span><span class="stat-value" id="statWeak">-</span></div>
+                <div class="stat-row"><span>🟢 优势领域</span><span class="stat-value" id="statStrong">-</span></div>
+            </div>
+            
+            <div class="graph-toolbar">
+                <button class="tool-btn" onclick="resetView()">🔄 重置</button>
+                <button class="tool-btn" id="immersiveBtn" onclick="toggleImmersive()">🌟 沉浸模式</button>
+            </div>
+            
+            <div class="legend-panel">
+                <div class="legend-grid">
+                    <div class="legend-item"><span class="legend-dot" style="background:#FF6B6B"></span>理工类</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#4ECDC4"></span>计算机</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#FFE66D"></span>经管类</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#95E1D3"></span>人文社科</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#DDA0DD"></span>语言文学</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#F38181"></span>艺术类</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#AA96DA"></span>医学健康</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#FCBAD3"></span>工程技术</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#A8D8EA"></span>其他</div>
+                </div>
+            </div>
+            
+            <div class="hint-panel">
+                <span>拖拽</span>移动 · <span>滚轮</span>缩放 · <span>双击</span>锁定 · <span>悬停</span>详情
+            </div>
+            
+            <button class="exit-immersive" onclick="toggleImmersive()">← 退出沉浸模式</button>
+            <div class="tooltip" id="tooltip"></div>
+            <div class="loading" id="loading">
+                <div class="loading-ring"></div>
+                <div class="loading-text">正在生成知识星图...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const colors = {
+    '理工类': '#FF6B6B', '计算机': '#4ECDC4', '经济管理': '#FFE66D',
+    '人文社科': '#95E1D3', '语言文学': '#DDA0DD', '艺术类': '#F38181',
+    '医学健康': '#AA96DA', '工程技术': '#FCBAD3', '其他': '#A8D8EA', 'center': '#10a37f'
+};
+
+const catMap = {
+    '数学': '理工类', '物理学': '理工类', '化学': '理工类', '生物学': '理工类', '天文学': '理工类',
+    '地理学': '理工类', '环境科学': '理工类', '统计学': '理工类',
+    '计算机科学': '计算机', '编程语言': '计算机', '数据结构': '计算机', '算法': '计算机',
+    '数据库': '计算机', '操作系统': '计算机', '计算机网络': '计算机', '人工智能': '计算机',
+    '大数据': '计算机', '云计算': '计算机', '网络安全': '计算机', '前端开发': '计算机',
+    '后端开发': '计算机', '移动开发': '计算机',
+    '经济学': '经济管理', '金融学': '经济管理', '会计学': '经济管理', '管理学': '经济管理',
+    '市场营销': '经济管理', '国际贸易': '经济管理', '电子商务': '经济管理', '创业学': '经济管理',
+    '哲学': '人文社科', '历史学': '人文社科', '政治学': '人文社科', '社会学': '人文社科',
+    '心理学': '人文社科', '教育学': '人文社科', '法学': '人文社科', '新闻传播学': '人文社科',
+    '英语': '语言文学', '中文': '语言文学', '文学': '语言文学', '日语': '语言文学',
+    '美术': '艺术类', '音乐': '艺术类', '舞蹈': '艺术类', '设计': '艺术类',
+    '临床医学': '医学健康', '药学': '医学健康', '护理学': '医学健康', '中医学': '医学健康',
+    '机械工程': '工程技术', '电气工程': '工程技术', '土木工程': '工程技术', '建筑学': '工程技术'
+};
+
+let svg, g, simulation;
+let isImmersive = false;
+let starsAnimation = null;
+
+// 星空背景
+function initStars() {
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    const stars = [];
+    for (let i = 0; i < 150; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 1.5,
+            a: Math.random(),
+            s: Math.random() * 0.02
+        });
+    }
+    
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(star => {
+            star.a += star.s;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + 0.7 * Math.abs(Math.sin(star.a))})`;
+            ctx.fill();
+        });
+        starsAnimation = requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+// 沉浸模式切换
+function toggleImmersive() {
+    isImmersive = !isImmersive;
+    document.body.classList.toggle('immersive-mode', isImmersive);
+    document.getElementById('graphWrapper').classList.toggle('immersive', isImmersive);
+    document.getElementById('immersiveBtn').classList.toggle('active', isImmersive);
+    document.getElementById('immersiveBtn').textContent = isImmersive ? '📍 普通模式' : '🌟 沉浸模式';
+    
+    // 重新渲染以适应新尺寸
+    setTimeout(() => {
+        if (simulation) simulation.alpha(0.3).restart();
+    }, 300);
+}
+
+async function init() {
+    initStars();
+    
+    // 检查是否需要自动进入沉浸模式
+    if (sessionStorage.getItem('enterImmersiveMode') === 'true') {
+        sessionStorage.removeItem('enterImmersiveMode');
+        // 等待 DOM 初始化完成后再进入沉浸模式
+        setTimeout(() => {
+            toggleImmersive();
+        }, 100);
+    }
+    
+    try {
+        const userRes = await fetch('../api/user/profile').then(r => r.json());
+        if (!userRes.success) { window.location.href = 'login.html'; return; }
+        
+        const res = await fetch('../api/profile/hierarchy').then(r => r.json());
+        if (!res.success || !res.data) {
+            document.getElementById('loading').innerHTML = '<div style="color:var(--text-secondary)">暂无数据，多提问生成星图</div>';
+            return;
+        }
+        
+        const data = transformData(res.data);
+        updateStats(res.data);
+        renderGraph(data);
+        
+        document.getElementById('loading').style.display = 'none';
+    } catch (e) {
+        document.getElementById('loading').innerHTML = '<div style="color:#f66">加载失败: ' + e.message + '</div>';
+    }
+}
+
+function transformData(h) {
+    const nodes = [{ id: 0, name: '我', value: 40, cat: 'center', fx: 0, fy: 0 }];
+    const links = [];
+    let id = 1;
+    
+    if (h.children) {
+        h.children.forEach(c => {
+            if (c.name === '学科分类' && c.children) {
+                c.children.forEach(subj => {
+                    const cat = catMap[subj.name] || '其他';
+                    let val = 0;
+                    const subjId = id++;
+                    
+                    if (subj.children) {
+                        subj.children.forEach(sub => {
+                            val += sub.value || 1;
+                            const subId = id++;
+                            nodes.push({ id: subId, name: sub.name, value: sub.value || 1, cat, parent: subj.name });
+                            links.push({ source: subjId, target: subId, strength: 0.7 });
+                        });
+                    } else {
+                        val = subj.value || 1;
+                    }
+                    
+                    nodes.push({ id: subjId, name: subj.name, value: Math.max(val, 8), cat });
+                    links.push({ source: 0, target: subjId, strength: 0.4 });
+                });
+            }
+        });
+    }
+    
+    if (nodes.length === 1) {
+        nodes.push({ id: 1, name: '开始提问', value: 10, cat: '其他' });
+        links.push({ source: 0, target: 1, strength: 0.5 });
+    }
+    
+    return { nodes, links };
+}
+
+function updateStats(h) {
+    let total = 0, domains = 0, weak = '-', strong = '-';
+    if (h.children) {
+        h.children.forEach(c => {
+            if (c.name === '学科分类' && c.children) {
+                domains = c.children.length;
+                c.children.forEach(s => {
+                    if (s.children) s.children.forEach(sub => total += sub.value || 0);
+                    else total += s.value || 0;
+                });
+            }
+            if (c.name === '学习状态' && c.children) {
+                c.children.forEach(st => {
+                    if (st.name === '薄弱领域' && st.children?.[0]) weak = st.children[0].name;
+                    if (st.name === '优势领域' && st.children?.[0]) strong = st.children[0].name;
+                });
+            }
+        });
+    }
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statDomains').textContent = domains;
+    document.getElementById('statWeak').textContent = weak;
+    document.getElementById('statStrong').textContent = strong;
+}
+
+function renderGraph(data) {
+    const container = document.getElementById('graph-svg');
+    const rect = container.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 600;
+    
+    d3.select('#graph-svg').selectAll('*').remove();
+    
+    svg = d3.select('#graph-svg').attr('viewBox', [-width/2, -height/2, width, height]);
+    
+    const defs = svg.append('defs');
+    const glow = defs.append('filter').attr('id', 'glow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+    glow.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
+    glow.append('feMerge').selectAll('feMergeNode').data(['blur', 'SourceGraphic']).join('feMergeNode').attr('in', d => d);
+    
+    const glowStrong = defs.append('filter').attr('id', 'glow-strong').attr('x', '-100%').attr('y', '-100%').attr('width', '300%').attr('height', '300%');
+    glowStrong.append('feGaussianBlur').attr('stdDeviation', '6').attr('result', 'blur');
+    glowStrong.append('feMerge').selectAll('feMergeNode').data(['blur', 'blur', 'SourceGraphic']).join('feMergeNode').attr('in', d => d);
+    
+    g = svg.append('g');
+    svg.call(d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform)));
+    
+    simulation = d3.forceSimulation(data.nodes)
+        .force('link', d3.forceLink(data.links).id(d => d.id).distance(d => 100 / (d.strength || 0.5)))
+        .force('charge', d3.forceManyBody().strength(d => d.cat === 'center' ? -600 : -150))
+        .force('center', d3.forceCenter())
+        .force('collision', d3.forceCollide(d => Math.sqrt(d.value) * 3 + 12));
+    
+    const links = g.append('g').selectAll('line').data(data.links).join('line')
+        .attr('stroke', d => {
+            const t = data.nodes.find(n => n.id === (d.target.id ?? d.target));
+            return colors[t?.cat] || '#888';
+        })
+        .attr('stroke-opacity', 0.4)
+        .attr('stroke-width', d => d.strength * 2 + 1);
+    
+    const nodes = g.append('g').selectAll('g').data(data.nodes).join('g').call(drag(simulation));
+    
+    nodes.append('circle')
+        .attr('r', d => d.cat === 'center' ? 45 : Math.sqrt(d.value) * 3 + 10)
+        .attr('fill', d => colors[d.cat] || colors['其他'])
+        .attr('fill-opacity', 0.15)
+        .attr('filter', 'url(#glow)');
+    
+    nodes.append('circle')
+        .attr('class', 'node-main')
+        .attr('r', d => d.cat === 'center' ? 32 : Math.sqrt(d.value) * 2.5 + 6)
+        .attr('fill', d => d.cat === 'center' ? colors.center : d3.color(colors[d.cat] || colors['其他']).darker(0.2))
+        .attr('stroke', d => colors[d.cat] || colors['其他'])
+        .attr('stroke-width', 2)
+        .style('cursor', 'grab')
+        .attr('filter', d => d.cat === 'center' ? 'url(#glow-strong)' : null);
+    
+    nodes.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', d => d.cat === 'center' ? 5 : -Math.sqrt(d.value) * 2.5 - 12)
+        .attr('fill', 'var(--text-primary)')
+        .attr('font-size', d => d.cat === 'center' ? 16 : 11)
+        .attr('font-weight', d => d.cat === 'center' ? 'bold' : 'normal')
+        .text(d => d.name);
+    
+    nodes.filter(d => d.cat !== 'center' && d.value > 0).append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', 4)
+        .attr('fill', '#fff')
+        .attr('font-size', 10)
+        .attr('font-weight', 'bold')
+        .text(d => d.value);
+    
+    const tooltip = d3.select('#tooltip');
+    
+    nodes.on('mouseover', function(e, d) {
+        if (d.cat === 'center') return;
+        d3.select(this).select('.node-main').attr('filter', 'url(#glow-strong)');
+        links.attr('stroke-opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 0.8 : 0.15);
+        
+        tooltip.style('opacity', 1)
+            .style('left', (e.pageX + 14) + 'px')
+            .style('top', (e.pageY - 16) + 'px')
+            .html(`<div class="tooltip-name">${d.name}</div><div class="tooltip-cat">${d.parent ? '📂 ' + d.parent : '🏷️ ' + (catMap[d.name] || d.cat)}</div><div class="tooltip-count">提问次数: <strong>${d.value}</strong></div>`);
+    })
+    .on('mousemove', e => tooltip.style('left', (e.pageX + 14) + 'px').style('top', (e.pageY - 16) + 'px'))
+    .on('mouseout', function(e, d) {
+        if (!d.locked) d3.select(this).select('.node-main').attr('filter', null);
+        links.attr('stroke-opacity', 0.4);
+        tooltip.style('opacity', 0);
+    })
+    .on('dblclick', function(e, d) {
+        if (d.cat === 'center') return;
+        d.locked = !d.locked;
+        if (d.locked) { d.fx = d.x; d.fy = d.y; d3.select(this).select('.node-main').attr('filter', 'url(#glow-strong)'); }
+        else { d.fx = null; d.fy = null; d3.select(this).select('.node-main').attr('filter', null); }
+    });
+    
+    simulation.on('tick', () => {
+        links.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        nodes.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+}
+
+function drag(sim) {
+    return d3.drag()
+        .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+        .on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); if (!d.locked && d.cat !== 'center') { d.fx = null; d.fy = null; } });
+}
+
+function resetView() {
+    if (!simulation) return;
+    simulation.nodes().forEach(d => { if (d.cat !== 'center') { d.fx = null; d.fy = null; d.locked = false; } });
+    simulation.alpha(1).restart();
+    svg.transition().duration(500).call(d3.zoom().transform, d3.zoomIdentity);
+}
+
+async function logout() {
+    if (confirm('确认退出？')) {
+        await fetch('../api/user/logout', { method: 'POST' });
+        window.location.href = 'login.html';
+    }
+}
+
+// 主题和侧边栏控制
+(function() {
+    try {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') document.body.dataset.theme = 'dark';
+    } catch(e) {}
+    
+    document.getElementById('themeToggle')?.addEventListener('click', function() {
+        const isDark = document.body.dataset.theme === 'dark';
+        if (isDark) { delete document.body.dataset.theme; localStorage.setItem('theme', 'light'); }
+        else { document.body.dataset.theme = 'dark'; localStorage.setItem('theme', 'dark'); }
+    });
+    
+    document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+        document.body.classList.toggle('sidebar-open');
+    });
+})();
+
+init();
+</script>
+</body>
+</html>

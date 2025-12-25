@@ -22,7 +22,7 @@ import com.xxzd.study.service.DocumentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
@@ -79,12 +79,12 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional
-    public void rebuildChunksFromFile(Long documentId, File file) {
+    public void rebuildChunks(Long documentId, java.io.InputStream inputStream, String filename) {
         if (documentId == null) {
             throw new IllegalArgumentException("documentId 不能为空");
         }
-        if (file == null || !file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException("文件不存在");
+        if (inputStream == null) {
+            throw new IllegalArgumentException("文件流不能为空");
         }
 
         Document document = documentMapper.selectById(documentId);
@@ -92,7 +92,7 @@ public class DocumentServiceImpl implements DocumentService {
             throw new IllegalArgumentException("文档不存在");
         }
 
-        String extracted = extractText(file, document.getName());
+        String extracted = extractText(inputStream, filename);
         if (extracted == null || extracted.trim().isEmpty()) {
             throw new IllegalStateException("文档解析结果为空");
         }
@@ -115,42 +115,49 @@ public class DocumentServiceImpl implements DocumentService {
         documentChunkMapper.insertBatch(insertList);
     }
 
-    private String extractText(File file, String filename) {
+    private String extractText(java.io.InputStream inputStream, String filename) {
         String name = filename == null ? "" : filename.trim();
         String lower = name.toLowerCase();
-        if (lower.endsWith(".txt")) {
-            return readTxt(file);
-        }
-        if (lower.endsWith(".pdf")) {
-            return readPdf(file);
-        }
-        if (lower.endsWith(".docx")) {
-            return readDocx(file);
-        }
-        if (lower.endsWith(".doc")) {
-            return readDoc(file);
+        try {
+            if (lower.endsWith(".txt")) {
+                return readTxt(inputStream);
+            }
+            if (lower.endsWith(".pdf")) {
+                return readPdf(inputStream);
+            }
+            if (lower.endsWith(".docx")) {
+                return readDocx(inputStream);
+            }
+            if (lower.endsWith(".doc")) {
+                return readDoc(inputStream);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("文件解析错误：" + e.getMessage(), e);
         }
         throw new IllegalArgumentException("不支持的文件类型：" + name);
     }
 
-    private String readTxt(File file) {
+    private String readTxt(java.io.InputStream inputStream) {
         try {
-            return Files.readString(file.toPath(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
+            byte[] bytes = inputStream.readAllBytes();
+            // Try UTF-8
             try {
-                return Files.readString(file.toPath(), java.nio.charset.Charset.forName("GBK"));
-            } catch (Exception ex) {
+                return new String(bytes, StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                // Try GBK
                 try {
-                return Files.readString(file.toPath(), StandardCharsets.ISO_8859_1);
-                } catch (Exception ex2) {
-                    throw new IllegalStateException("TXT 读取失败：" + ex2.getMessage(), ex2);
+                    return new String(bytes, java.nio.charset.Charset.forName("GBK"));
+                } catch (Exception ex) {
+                     return new String(bytes, StandardCharsets.ISO_8859_1);
                 }
             }
+        } catch (Exception e) {
+            throw new IllegalStateException("TXT 读取失败：" + e.getMessage(), e);
         }
     }
 
-    private String readPdf(File file) {
-        try (PDDocument doc = PDDocument.load(file)) {
+    private String readPdf(java.io.InputStream inputStream) {
+        try (PDDocument doc = PDDocument.load(inputStream)) {
             PDFTextStripper stripper = new PDFTextStripper();
             return stripper.getText(doc);
         } catch (Exception e) {
@@ -158,9 +165,8 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    private String readDocx(File file) {
-        try (FileInputStream fis = new FileInputStream(file);
-             XWPFDocument doc = new XWPFDocument(fis);
+    private String readDocx(java.io.InputStream inputStream) {
+        try (XWPFDocument doc = new XWPFDocument(inputStream);
              XWPFWordExtractor extractor = new XWPFWordExtractor(doc)) {
             return extractor.getText();
         } catch (Exception e) {
@@ -168,9 +174,8 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    private String readDoc(File file) {
-        try (FileInputStream fis = new FileInputStream(file);
-             HWPFDocument doc = new HWPFDocument(fis);
+    private String readDoc(java.io.InputStream inputStream) {
+        try (HWPFDocument doc = new HWPFDocument(inputStream);
              WordExtractor extractor = new WordExtractor(doc)) {
             return extractor.getText();
         } catch (Exception e) {

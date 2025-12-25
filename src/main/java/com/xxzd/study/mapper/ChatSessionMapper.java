@@ -12,5 +12,7 @@ public interface ChatSessionMapper {
     ChatSession selectById(@Param("id") Long id);
 
     List<ChatSession> selectByUserId(@Param("userId") Long userId);
+
+    int deleteByUserId(@Param("userId") Long userId);
 }
 

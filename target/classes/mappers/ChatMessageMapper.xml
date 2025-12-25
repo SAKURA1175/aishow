@@ -28,4 +28,8 @@
         WHERE session_id = #{sessionId}
         ORDER BY create_time ASC
     </select>
+
+    <delete id="deleteBySessionId">
+        DELETE FROM chat_message WHERE session_id = #{sessionId}
+    </delete>
 </mapper>

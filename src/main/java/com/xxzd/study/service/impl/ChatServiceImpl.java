@@ -1,18 +1,16 @@
 package com.xxzd.study.service.impl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xxzd.study.ai.AiHttpClient;
+import com.xxzd.study.ai.AiChatService;
 import com.xxzd.study.domain.ChatMessage;
 import com.xxzd.study.domain.ChatSession;
 import com.xxzd.study.domain.DocumentChunk;
@@ -32,12 +30,13 @@ public class ChatServiceImpl implements ChatService {
     private ChatMessageMapper chatMessageMapper;
 
     @Resource
-    private AiHttpClient aiHttpClient;
+    private AiChatService aiChatService;
+
+    @Resource
+    private com.xxzd.study.ai.SystemPromptProvider systemPromptProvider;
 
     @Resource
     private DocumentChunkMapper documentChunkMapper;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional
@@ -101,29 +100,84 @@ public class ChatServiceImpl implements ChatService {
         return chatMessageMapper.selectBySessionId(sessionId);
     }
 
+    @Override
+    @Transactional
+    public void clearUserSessions(Long userId) {
+        // 1. 查询用户的所有会话
+        List<ChatSession> sessions = chatSessionMapper.selectByUserId(userId);
+        if (sessions == null || sessions.isEmpty()) {
+            return;
+        }
+
+        // 2. 删除这些会话的所有消息
+        for (ChatSession session : sessions) {
+            chatMessageMapper.deleteBySessionId(session.getId());
+        }
+
+        // 3. 删除会话本身
+        chatSessionMapper.deleteByUserId(userId);
+    }
+
     /**
      * 调用 AI API 获取回答
      */
-    public String getAiAnswer(String prompt) {
+    @Override
+    public String getAiAnswer(User user, String prompt, Long sessionId) {
         try {
-            String finalPrompt = buildPromptWithKnowledge(prompt);
-            String response = aiHttpClient.chat(finalPrompt);
-            // 析析 API 响应，提取 消息内容
-            String answer = parseAiResponse(response);
+            // Determine system prompt based on user role
+            String role = (user != null) ? user.getRole() : "student";
+            String systemPrompt = systemPromptProvider.getPromptByRole(role);
 
-            if (finalPrompt != null && finalPrompt.startsWith("【RAG】") && finalPrompt.contains("[资料")) {
-                String a = answer == null ? "" : answer;
-                boolean hasCitation = a.contains("资料") || a.contains("引用");
-                if (!hasCitation) {
-                    String retryPrompt = finalPrompt + "\n\n【强制要求】请严格按规则重写答案，并在末尾输出引用。";
-                    String retryResp = aiHttpClient.chat(retryPrompt);
-                    return parseAiResponse(retryResp);
+            // Get History
+            List<ChatMessage> history = chatMessageMapper.selectBySessionId(sessionId);
+            List<ChatMessage> contextHistory = new ArrayList<>();
+            if (history != null && !history.isEmpty()) {
+                // 如果最后一条是当前问题，则从历史记录中排除，避免与 RAG Prompt 重复
+                ChatMessage last = history.get(history.size() - 1);
+                int end = history.size();
+                if ("user".equals(last.getRole()) && prompt != null && last.getContent().trim().equals(prompt.trim())) {
+                    end = history.size() - 1;
+                }
+                
+                // 取最近 10 条历史记录作为上下文
+                int start = Math.max(0, end - 10);
+                for (int i = start; i < end; i++) {
+                    contextHistory.add(history.get(i));
                 }
             }
 
-            return answer;
+            String finalPrompt = buildPromptWithKnowledge(prompt);
+            
+            // 使用 CompletableFuture 实现超时控制，防止 AI 服务卡死
+            java.util.concurrent.CompletableFuture<String> future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    String answer = aiChatService.chat(systemPrompt, contextHistory, finalPrompt);
+                    if (finalPrompt != null && finalPrompt.startsWith("【RAG】") && finalPrompt.contains("[资料")) {
+                        String a = answer == null ? "" : answer;
+                        boolean hasCitation = a.contains("资料") || a.contains("引用");
+                        if (!hasCitation) {
+                            String retryPrompt = finalPrompt + "\n\n【强制要求】请严格按规则重写答案，并在末尾输出引用。";
+                            return aiChatService.chat(systemPrompt, contextHistory, retryPrompt);
+                        }
+                    }
+                    return answer;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // 设置 30 秒超时
+            try {
+                return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                future.cancel(true);
+                return "抱歉，AI 思考时间过长，请稍后重试或简化问题。";
+            } catch (Exception e) {
+                return "错误：AI 服务调用异常：" + e.getMessage();
+            }
+
         } catch (Exception e) {
-            return "错误：AI 服务调用失败：" + e.getMessage();
+            return "错误：系统内部错误：" + e.getMessage();
         }
     }
 
@@ -295,49 +349,4 @@ public class ChatServiceImpl implements ChatService {
         return t.trim();
     }
 
-    /**
-     * 解析 AI API 响应中的消息内容
-     */
-    private String parseAiResponse(String response) {
-        try {
-            // 首先检查是否是错误消息
-            if (response == null || response.trim().isEmpty()) {
-                return "查询失败：响应为空";
-            }
-            
-            String trimmedResponse = response.trim();
-            System.out.println("[DEBUG] AI API Response: " + trimmedResponse.substring(0, Math.min(500, trimmedResponse.length())));
-            
-            if (trimmedResponse.contains("error") || trimmedResponse.contains("错误")) {
-                return trimmedResponse;
-            }
-            
-            // 尝试作为 JSON 解析
-            if (!trimmedResponse.startsWith("{")) {
-                return "查询失败：响应靐 JSON 格式 → " + trimmedResponse.substring(0, Math.min(100, trimmedResponse.length()));
-            }
-            
-            Map<String, Object> result = objectMapper.readValue(trimmedResponse, Map.class);
-            
-            // 根据阳光千问 API 响应结构
-            if (result.containsKey("choices") && result.get("choices") != null) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) result.get("choices");
-                if (!choices.isEmpty()) {
-                    Map<String, Object> choice = choices.get(0);
-                    if (choice.containsKey("message") && choice.get("message") != null) {
-                        Map<String, Object> message = (Map<String, Object>) choice.get("message");
-                        Object content = message.get("content");
-                        if (content != null) {
-                            return content.toString();
-                        }
-                    }
-                }
-            }
-            
-            return "查询失败：响应格式不对";
-        } catch (Exception e) {
-            System.out.println("[ERROR] JSON Parse Error: " + e.getMessage());
-            return "查询失败：" + e.getMessage();
-        }
-    }
 }

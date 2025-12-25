@@ -17,5 +17,5 @@ public interface DocumentService {
 
     void updateStoredFilename(Long id, String storedFilename);
 
-    void rebuildChunksFromFile(Long documentId, File file);
+    void rebuildChunks(Long documentId, java.io.InputStream inputStream, String filename);
 }

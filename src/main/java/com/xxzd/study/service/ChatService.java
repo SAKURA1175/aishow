@@ -18,6 +18,8 @@ public interface ChatService {
 
     List<ChatMessage> listMessagesBySession(Long sessionId);
 
-    String getAiAnswer(String prompt);
+    void clearUserSessions(Long userId);
+
+    String getAiAnswer(User user, String prompt, Long sessionId);
 }
 

@@ -3,10 +3,11 @@ package com.xxzd.study.controller;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,12 +42,25 @@ public class ChatController {
         }
         User user = (User) userObj;
         String content = question.getQuestion().trim();
-        // 调用真实的 AI API 获取回答
-        String answer = chatService.getAiAnswer(content);
+        // 1. 创建或获取会话（优先确保会话存在）
         ChatSession chatSession = chatService.createSessionIfAbsent(user, content, question.getSessionId());
+        
+        // 2. 立即保存用户的提问，防止AI调用失败导致记录丢失
         chatService.saveMessage(chatSession.getId(), "user", content);
+        
+        // 3. 调用真实的 AI API 获取回答
+        String answer;
+        try {
+            answer = chatService.getAiAnswer(user, content, chatSession.getId());
+        } catch (Exception e) {
+            answer = "抱歉，AI服务暂时不可用，请稍后再试。错误信息：" + e.getMessage();
+        }
+
+        // 4. 保存 AI 的回答
         chatService.saveMessage(chatSession.getId(), "ai", answer);
+        
         learningProfileService.recordQuestion(user, content);
+        
         ChatAnswer chatAnswer = new ChatAnswer();
         chatAnswer.setAnswer(answer);
         chatAnswer.setSessionId(chatSession.getId());
@@ -115,6 +129,18 @@ public class ChatController {
             list.add(v);
         }
         return ApiResponse.ok(list);
+    }
+
+    @DeleteMapping("/clear")
+    public ApiResponse<Void> clearSessions(HttpSession session) {
+        Object userObj = session.getAttribute("currentUser");
+        if (!(userObj instanceof User)) {
+            return ApiResponse.fail("未登录");
+        }
+        User user = (User) userObj;
+        
+        chatService.clearUserSessions(user.getId());
+        return ApiResponse.ok(null);
     }
 
     public static class ChatQuestion {

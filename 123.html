@@ -1,0 +1,113 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-size="12">
+    <defs>
+        <style>
+            .chip-box { fill: #f8f8f8; stroke: #333; stroke-width: 1.5; }
+            .pin-label { font-size: 10px; fill: #555; }
+            .wire { stroke: #3498db; stroke-width: 2; fill: none; }
+            .power-line { stroke: #e74c3c; stroke-width: 2; }
+            .ground-line { stroke: #2ecc71; stroke-width: 2; }
+            .component-body { fill: #fff; stroke: #555; stroke-width: 1; }
+            .component-label { font-size: 10px; fill: #333; }
+            .resistor-line { stroke: #333; stroke-width: 1.5; }
+            .resistor-zigzag { fill: none; stroke: #333; stroke-width: 1.5; }
+            .capacitor-plate { stroke: #333; stroke-width: 1.5; }
+            .capacitor-line { stroke: #333; stroke-width: 1.5; }
+            .power-symbol { stroke: #e74c3c; fill: #e74c3c; }
+            .ground-symbol { stroke: #2ecc71; fill: #2ecc71; }
+            .title-text { font-size: 16px; font-weight: bold; fill: #333; text-anchor: middle; }
+        </style>
+    </defs>
+
+    <text x="400" y="30" class="title-text">OLED (SSD1306) I2C 连接原理图 (SVG)</text>
+
+    <rect x="50" y="100" width="150" height="200" rx="10" ry="10" class="chip-box"/>
+    <text x="125" y="125" text-anchor="middle" font-weight="bold">STM32 MCU</text>
+
+    <line x1="200" y1="150" x2="220" y2="150" class="wire"/>
+    <text x="170" y="153" class="pin-label">SCL (PB6)</text>
+
+    <line x1="200" y1="180" x2="220" y2="180" class="wire"/>
+    <text x="170" y="183" class="pin-label">SDA (PB7)</text>
+
+    <line x1="200" y1="100" x2="220" y2="100" class="power-line"/>
+    <text x="170" y="103" class="pin-label">VCC (3.3V)</text>
+
+    <line x1="200" y1="280" x2="220" y2="280" class="ground-line"/>
+    <text x="170" y="283" class="pin-label">GND</text>
+
+    <rect x="550" y="100" width="200" height="200" rx="10" ry="10" class="chip-box"/>
+    <text x="650" y="125" text-anchor="middle" font-weight="bold">OLED Module</text>
+    <text x="650" y="145" text-anchor="middle" font-size="12px">(SSD1306 Driver)</text>
+
+    <line x1="550" y1="150" x2="530" y2="150" class="wire"/>
+    <text x="560" y="153" class="pin-label">SCL</text>
+
+    <line x1="550" y1="180" x2="530" y2="180" class="wire"/>
+    <text x="560" y="183" class="pin-label">SDA</text>
+
+    <line x1="550" y1="100" x2="530" y2="100" class="power-line"/>
+    <text x="560" y="103" class="pin-label">VCC</text>
+
+    <line x1="550" y1="280" x2="530" y2="280" class="ground-line"/>
+    <text x="560" y="283" class="pin-label">GND</text>
+
+    <polygon points="100,50 105,55 95,55" class="power-symbol"/>
+    <line x1="100" y1="50" x2="100" y2="70" class="power-line"/>
+    <text x="105" y="65" class="pin-label">VCC</text>
+
+    <polyline points="100,350 90,360 110,360 100,370" class="ground-symbol"/>
+    <line x1="100" y1="350" x2="100" y2="330" class="ground-line"/>
+    <text x="105" y="345" class="pin-label">GND</text>
+
+
+    <line x1="220" y1="150" x2="350" y2="150" class="wire"/>
+    <line x1="450" y1="150" x2="530" y2="150" class="wire"/>
+    <line x1="220" y1="180" x2="350" y2="180" class="wire"/>
+    <line x1="450" y1="180" x2="530" y2="180" class="wire"/>
+
+    <line x1="220" y1="100" x2="300" y2="100" class="power-line"/>
+    <line x1="400" y1="100" x2="530" y2="100" class="power-line"/>
+    <line x1="300" y1="100" x2="300" y2="70" class="power-line"/>
+    <line x1="400" y1="100" x2="400" y2="70" class="power-line"/>
+
+    <line x1="220" y1="280" x2="300" y2="280" class="ground-line"/>
+    <line x1="400" y1="280" x2="530" y2="280" class="ground-line"/>
+    <line x1="300" y1="280" x2="300" y2="310" class="ground-line"/>
+    <line x1="400" y1="280" x2="400" y2="310" class="ground-line"/>
+
+
+    <rect x="350" y="135" width="20" height="30" class="resistor-body"/>
+    <line x1="350" y1="150" x2="370" y2="150" class="resistor-line"/>
+    <line x1="370" y1="150" x2="370" y2="100" class="resistor-line"/>
+    <text x="360" y="140" text-anchor="middle" class="component-label">R1 (4.7kΩ)</text>
+    <text x="375" y="95" class="component-label">VCC</text>
+
+    <rect x="350" y="165" width="20" height="30" class="resistor-body"/>
+    <line x1="350" y1="180" x2="370" y2="180" class="resistor-line"/>
+    <line x1="370" y1="180" x2="370" y2="100" class="resistor-line"/>
+    <text x="360" y="170" text-anchor="middle" class="component-label">R2 (4.7kΩ)</text>
+
+
+    <rect x="300" y="70" width="10" height="20" class="capacitor-plate"/>
+    <line x1="305" y1="90" x2="305" y2="100" class="capacitor-line"/>
+    <line x1="305" y1="70" x2="305" y2="60" class="capacitor-line"/>
+    <line x1="300" y1="60" x2="310" y2="60" class="capacitor-line"/>
+    <text x="305" y="80" text-anchor="middle" class="component-label">C1 (100nF)</text>
+    <line x1="305" y1="60" x2="305" y2="40" class="power-line"/>
+
+    <rect x="400" y="310" width="10" height="20" class="capacitor-plate"/>
+    <line x1="405" y1="310" x2="405" y2="300" class="capacitor-line"/>
+    <line x1="405" y1="330" x2="405" y2="340" class="capacitor-line"/>
+    <line x1="400" y1="340" x2="410" y2="340" class="capacitor-line"/>
+    <text x="405" y="320" text-anchor="middle" class="component-label">C2 (100nF)</text>
+    <line x1="405" y1="340" x2="405" y2="360" class="ground-line"/>
+
+    <line x1="370" y1="100" x2="370" y2="70" class="power-line"/>
+    <line x1="370" y1="70" x2="305" y2="70" class="power-line"/>
+    <line x1="305" y1="40" x2="305" y2="20" class="power-line"/>
+    <polygon points="305,20 310,25 300,25" class="power-symbol"/>
+
+    <line x1="305" y1="360" x2="305" y2="370" class="ground-line"/>
+    <polyline points="305,370 295,380 315,380 305,390" class="ground-symbol"/>
+
+</svg>

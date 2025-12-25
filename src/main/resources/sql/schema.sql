@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `chat_message` (
   `session_id` BIGINT NOT NULL COMMENT '所属会话ID',
   `role` VARCHAR(32) NOT NULL COMMENT '角色：user / ai',
   `content` TEXT NOT NULL COMMENT '消息内容',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   CONSTRAINT `fk_message_session` FOREIGN KEY (`session_id`) REFERENCES `chat_session` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='对话消息表';
 

@@ -1,7 +1,7 @@
 package com.xxzd.study.controller;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,4 +45,3 @@ public class LearningProfileController {
         return ApiResponse.ok(hierarchy);
     }
 }
-

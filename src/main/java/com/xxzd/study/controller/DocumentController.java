@@ -7,9 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +31,9 @@ public class DocumentController {
     @Resource
     private DocumentService documentService;
 
+    @Resource
+    private com.xxzd.study.service.OssService ossService;
+
     @PostMapping("/upload")
     public ApiResponse<DocumentInfo> upload(MultipartFile file, HttpSession session) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -48,48 +51,44 @@ public class DocumentController {
         }
 
         Document document = null;
-        File dest = null;
+        String objectName = null;
         try {
-            String baseDir = System.getProperty("user.home") + File.separator + "study-ai-uploads";
-            File dir = new File(baseDir);
-            if (!dir.exists()) {
-                boolean created = dir.mkdirs();
-                if (!created && !dir.exists()) {
-                    return ApiResponse.fail("服务器创建上传目录失败");
-                }
-            }
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || originalFilename.trim().isEmpty()) {
                 originalFilename = "unnamed";
             }
-            String safeOriginalFilename = originalFilename.replace("\\", "_").replace("/", "_");
+            
+            // 1. 保存数据库记录
             document = documentService.saveDocument(originalFilename, user);
-            String stored = document.getId() + "_" + safeOriginalFilename;
-            dest = new File(dir, stored);
-            java.nio.file.Files.copy(file.getInputStream(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            
+            // 2. 上传到 OSS
+            objectName = "documents/" + document.getId() + "/" + originalFilename;
+            try (java.io.InputStream is = file.getInputStream()) {
+                ossService.upload(objectName, is);
+            }
 
-            documentService.updateStoredFilename(document.getId(), stored);
-            documentService.rebuildChunksFromFile(document.getId(), dest);
+            // 3. 更新存储文件名
+            documentService.updateStoredFilename(document.getId(), objectName);
+
+            // 4. 解析文档并切片入库
+            try (java.io.InputStream is = file.getInputStream()) {
+                documentService.rebuildChunks(document.getId(), is, originalFilename);
+            }
 
             DocumentInfo info = new DocumentInfo();
             info.setId(document.getId());
             info.setName(document.getName());
             info.setUploaderId(document.getUploaderId());
             return ApiResponse.ok("上传成功", info);
-        } catch (IOException e) {
-            if (dest != null && dest.exists()) {
-                dest.delete();
-            }
-            if (document != null && document.getId() != null) {
-                documentService.deleteById(document.getId());
-            }
-            return ApiResponse.fail("上传文件失败：" + e.getMessage());
         } catch (Exception e) {
-            if (dest != null && dest.exists()) {
-                dest.delete();
-            }
+            // 回滚：删除数据库记录和OSS文件
             if (document != null && document.getId() != null) {
                 documentService.deleteById(document.getId());
+            }
+            if (objectName != null) {
+                try {
+                    ossService.delete(objectName);
+                } catch (Exception ignore) {}
             }
             return ApiResponse.fail("上传处理失败：" + e.getMessage());
         }
@@ -116,10 +115,19 @@ public class DocumentController {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        
+        String stored = document.getStoredFilename();
+        if (stored != null && stored.startsWith("documents/")) {
+             // OSS
+             String url = ossService.getUrl(stored);
+             response.sendRedirect(url);
+             return;
+        }
+
         String baseDir = System.getProperty("user.home") + File.separator + "study-ai-uploads";
-        String stored = (document.getStoredFilename() != null && !document.getStoredFilename().trim().isEmpty())
-                ? document.getStoredFilename()
-                : id + "_" + document.getName();
+        if (stored == null || stored.trim().isEmpty()) {
+             stored = id + "_" + document.getName();
+        }
         File file = new File(baseDir, stored);
         if (!file.exists()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -152,13 +160,23 @@ public class DocumentController {
         if (!ok) {
             return ApiResponse.fail("删除文档失败");
         }
-        String baseDir = System.getProperty("user.home") + File.separator + "study-ai-uploads";
-        String stored = (document.getStoredFilename() != null && !document.getStoredFilename().trim().isEmpty())
-                ? document.getStoredFilename()
-                : id + "_" + document.getName();
-        File file = new File(baseDir, stored);
-        if (file.exists()) {
-            file.delete();
+        
+        String stored = document.getStoredFilename();
+        if (stored != null && stored.startsWith("documents/")) {
+            try {
+                ossService.delete(stored);
+            } catch (Exception e) {
+                // Log warning but don't fail, as DB is already deleted
+            }
+        } else {
+            String baseDir = System.getProperty("user.home") + File.separator + "study-ai-uploads";
+            if (stored == null || stored.trim().isEmpty()) {
+                stored = id + "_" + document.getName();
+            }
+            File file = new File(baseDir, stored);
+            if (file.exists()) {
+                file.delete();
+            }
         }
         return ApiResponse.ok(null);
     }

@@ -10,5 +10,7 @@ public interface ChatMessageMapper {
     int insert(ChatMessage message);
 
     List<ChatMessage> selectBySessionId(@Param("sessionId") Long sessionId);
+
+    int deleteBySessionId(@Param("sessionId") Long sessionId);
 }
 
