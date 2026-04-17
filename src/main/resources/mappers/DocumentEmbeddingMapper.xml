@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.xxzd.study.mapper.DocumentEmbeddingMapper">
+
+    <resultMap id="EmbeddingMap" type="com.xxzd.study.domain.DocumentEmbedding">
+        <id     property="id"         column="id"/>
+        <result property="chunkId"    column="chunk_id"/>
+        <result property="vectorJson" column="vector_json"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.DocumentEmbedding"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO document_embedding (chunk_id, vector_json)
+        VALUES (#{chunkId}, #{vectorJson})
+    </insert>
+
+    <delete id="deleteByChunkId">
+        DELETE FROM document_embedding WHERE chunk_id = #{chunkId}
+    </delete>
+
+    <delete id="deleteByDocumentId">
+        DELETE de FROM document_embedding de
+        INNER JOIN document_chunk dc ON de.chunk_id = dc.id
+        WHERE dc.document_id = #{documentId}
+    </delete>
+
+    <select id="selectByChunkIds" resultMap="EmbeddingMap">
+        SELECT id, chunk_id, vector_json
+        FROM document_embedding
+        WHERE chunk_id IN
+        <foreach collection="chunkIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="selectAll" resultMap="EmbeddingMap">
+        SELECT id, chunk_id, vector_json
+        FROM document_embedding
+    </select>
+
+</mapper>

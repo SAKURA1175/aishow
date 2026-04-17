@@ -32,6 +32,23 @@ public class UserController {
         return ApiResponse.ok("登录成功", info);
     }
 
+    @PostMapping("/register")
+    public ApiResponse<UserInfo> register(@RequestBody LoginRequest request) {
+        if (request == null || request.getUsername() == null || request.getPassword() == null) {
+            return ApiResponse.fail("用户名或密码不能为空");
+        }
+        try {
+            User user = userService.register(request.getUsername(), request.getPassword(), request.getRole());
+            UserInfo info = new UserInfo();
+            info.setId(user.getId());
+            info.setUsername(user.getUsername());
+            info.setRole(user.getRole());
+            return ApiResponse.ok("注册成功", info);
+        } catch (RuntimeException e) {
+            return ApiResponse.fail(e.getMessage());
+        }
+    }
+
     @PostMapping("/logout")
     public ApiResponse<Void> logout(HttpSession session) {
         if (session != null) {

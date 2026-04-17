@@ -45,4 +45,21 @@
         id DESC
         LIMIT #{limit}
     </select>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM document_chunk
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="selectByDocumentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM document_chunk
+        WHERE document_id = #{documentId}
+        ORDER BY chunk_index
+    </select>
+
 </mapper>

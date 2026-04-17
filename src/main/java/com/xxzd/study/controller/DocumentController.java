@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
@@ -29,10 +32,31 @@ import com.xxzd.study.service.DocumentService;
 public class DocumentController {
 
     @Resource
-    private DocumentService documentService;
+    private com.xxzd.study.service.DocumentService documentService;
 
     @Resource
     private com.xxzd.study.service.OssService ossService;
+
+    @Resource
+    private com.xxzd.study.config.properties.OssProperties ossProperties;
+
+    @Resource
+    private com.xxzd.study.ai.EmbeddingService embeddingService;
+
+    @Resource
+    private com.xxzd.study.mapper.DocumentEmbeddingMapper documentEmbeddingMapper;
+
+    @Resource
+    private com.xxzd.study.mapper.DocumentChunkMapper documentChunkMapper;
+
+    @Resource
+    private com.xxzd.study.ai.VectorRagService vectorRagService;
+
+    /** OSS 是否已配置 */
+    private boolean isOssConfigured() {
+        String keyId = ossProperties.getAccessKeyId();
+        return keyId != null && !keyId.isBlank() && !keyId.contains("your-access-key-id");
+    }
 
     @PostMapping("/upload")
     public ApiResponse<DocumentInfo> upload(MultipartFile file, HttpSession session) throws IOException {
@@ -44,36 +68,53 @@ public class DocumentController {
             return ApiResponse.fail("请先登录后再上传文档");
         }
         User user = (User) userObj;
-        
+
         // 鉴权：只有教师可以上传文档
         if (!"teacher".equals(user.getRole())) {
             return ApiResponse.fail("只有教师可以上传文档");
         }
 
         Document document = null;
-        String objectName = null;
+        String storedName = null;
         try {
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || originalFilename.trim().isEmpty()) {
                 originalFilename = "unnamed";
             }
-            
+
             // 1. 保存数据库记录
             document = documentService.saveDocument(originalFilename, user);
-            
-            // 2. 上传到 OSS
-            objectName = "documents/" + document.getId() + "/" + originalFilename;
-            try (java.io.InputStream is = file.getInputStream()) {
-                ossService.upload(objectName, is);
+
+            if (isOssConfigured()) {
+                // ---- OSS 路径 ----
+                storedName = "documents/" + document.getId() + "/" + originalFilename;
+                try (java.io.InputStream is = file.getInputStream()) {
+                    ossService.upload(storedName, is);
+                }
+                documentService.updateStoredFilename(document.getId(), storedName);
+            } else {
+                // ---- 本地存储降级路径 ----
+                String baseDir = System.getProperty("user.home") + File.separator + "study-ai-uploads";
+                Path dir = Paths.get(baseDir);
+                Files.createDirectories(dir);
+                storedName = document.getId() + "_" + originalFilename;
+                Path dest = dir.resolve(storedName);
+                try (java.io.InputStream is = file.getInputStream()) {
+                    Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
+                }
+                documentService.updateStoredFilename(document.getId(), storedName);
             }
 
-            // 3. 更新存储文件名
-            documentService.updateStoredFilename(document.getId(), objectName);
-
-            // 4. 解析文档并切片入库
+            // 2. 解析文档并切片入库
             try (java.io.InputStream is = file.getInputStream()) {
                 documentService.rebuildChunks(document.getId(), is, originalFilename);
             }
+
+            // 3. 异步向量化（后台进行，不阻塞上传响应）
+            final Long docId = document.getId();
+            Thread t = new Thread(() -> vectorizeDocument(docId), "vectorize-doc-" + docId);
+            t.setDaemon(true);
+            t.start();
 
             DocumentInfo info = new DocumentInfo();
             info.setId(document.getId());
@@ -81,14 +122,20 @@ public class DocumentController {
             info.setUploaderId(document.getUploaderId());
             return ApiResponse.ok("上传成功", info);
         } catch (Exception e) {
-            // 回滚：删除数据库记录和OSS文件
+            // 回滚：删除数据库记录
             if (document != null && document.getId() != null) {
                 documentService.deleteById(document.getId());
             }
-            if (objectName != null) {
-                try {
-                    ossService.delete(objectName);
-                } catch (Exception ignore) {}
+            // 回滚存储
+            if (storedName != null) {
+                if (storedName.startsWith("documents/")) {
+                    try { ossService.delete(storedName); } catch (Exception ignore) {}
+                } else {
+                    try {
+                        Path p = Paths.get(System.getProperty("user.home"), "study-ai-uploads", storedName);
+                        Files.deleteIfExists(p);
+                    } catch (Exception ignore) {}
+                }
             }
             return ApiResponse.fail("上传处理失败：" + e.getMessage());
         }
@@ -179,6 +226,42 @@ public class DocumentController {
             }
         }
         return ApiResponse.ok(null);
+    }
+
+    /**
+     * 异步向量化：为文档每个 chunk 生成 BGE-M3 向量，写入 Chroma（同时备份到 MySQL）
+     */
+    private void vectorizeDocument(Long documentId) {
+        try {
+            java.util.List<com.xxzd.study.domain.DocumentChunk> chunks =
+                    documentChunkMapper.selectByDocumentId(documentId);
+            if (chunks == null || chunks.isEmpty()) return;
+
+            int success = 0;
+            for (com.xxzd.study.domain.DocumentChunk chunk : chunks) {
+                try {
+                    // 1. 生成向量
+                    float[] vec = embeddingService.embed(chunk.getContent());
+
+                    // 2. 写入 Chroma（主存储）
+                    vectorRagService.indexChunk(chunk, vec);
+
+                    // 3. 备份到 MySQL（降级兜底）
+                    com.xxzd.study.domain.DocumentEmbedding emb = new com.xxzd.study.domain.DocumentEmbedding();
+                    emb.setChunkId(chunk.getId());
+                    emb.setVectorJson(com.xxzd.study.ai.EmbeddingService.toJson(vec));
+                    documentEmbeddingMapper.deleteByChunkId(chunk.getId());
+                    documentEmbeddingMapper.insert(emb);
+
+                    success++;
+                } catch (Exception e) {
+                    System.err.println("[VectorRAG] chunk " + chunk.getId() + " 向量化失败: " + e.getMessage());
+                }
+            }
+            System.out.println("[VectorRAG] ✅ 文档 " + documentId + " 向量化完成 " + success + "/" + chunks.size() + " 个切片");
+        } catch (Exception e) {
+            System.err.println("[VectorRAG] ❌ 文档 " + documentId + " 向量化失败: " + e.getMessage());
+        }
     }
 
     public static class DocumentInfo {

@@ -21,5 +21,13 @@ public interface ChatService {
     void clearUserSessions(Long userId);
 
     String getAiAnswer(User user, String prompt, Long sessionId);
+
+    String getAiAnswerWithImage(User user, String prompt, Long sessionId,
+                                String imageBase64, String mimeType);
+
+    reactor.core.publisher.Flux<String> streamAiAnswer(User user, String prompt, Long sessionId, boolean deepThink);
+
+    reactor.core.publisher.Flux<String> streamAiAnswerWithImage(User user, String prompt, Long sessionId,
+                                                                String imageBase64, String mimeType, boolean deepThink);
 }
 

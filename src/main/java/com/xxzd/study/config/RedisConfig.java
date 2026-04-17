@@ -1,5 +1,6 @@
 package com.xxzd.study.config;
 
+import com.xxzd.study.config.properties.AiProperties;
 import com.xxzd.study.config.properties.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +11,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 @Configuration
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, AiProperties.class})
 public class RedisConfig {
 
     @Bean

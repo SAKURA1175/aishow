@@ -1,0 +1,31 @@
+spring:
+  config:
+    import:
+      - classpath:db.properties
+      - classpath:redis.properties
+
+  datasource:
+    driver-class-name: ${jdbc.driver}
+    url: ${jdbc.url}
+    username: ${jdbc.username}
+    password: ${jdbc.password}
+
+  data:
+    redis:
+      host: ${redis.host}
+      port: ${redis.port}
+
+  # 禁用 Spring AI 的 OpenAI 自动配置（项目使用 SpringAiConfig 手动配置）
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+
+server:
+  port: 8090
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:mappers/*.xml
+
+# AI 配置由 redis.properties 中的 ai.* 属性提供，通过 AiProperties 注入
+# 当前配置：gemini-2.5-pro via https://new.lemonapi.site/v1（OpenAI 兼容协议）

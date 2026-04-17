@@ -12,5 +12,15 @@ public interface UserService {
      * @return 用户对象，登录失败返回 null
      */
     User login(String username, String password, String role);
+
+    /**
+     * 注册
+     * @param username 用户名
+     * @param password 密码
+     * @param role 角色
+     * @return 用户对象
+     * @throws RuntimeException 当用户名已存在时抛出异常
+     */
+    User register(String username, String password, String role);
 }
 

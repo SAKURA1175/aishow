@@ -14,7 +14,8 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI();
-        if (uri.contains("/api/user/login")) {
+        // Allow login and register endpoints through
+        if (uri.contains("/api/user/login") || uri.contains("/api/user/register")) {
             return true;
         }
         HttpSession session = request.getSession(false);

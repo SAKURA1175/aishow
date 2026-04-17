@@ -38,6 +38,9 @@ public class ChatServiceImpl implements ChatService {
     @Resource
     private DocumentChunkMapper documentChunkMapper;
 
+    @Resource
+    private com.xxzd.study.ai.VectorRagService vectorRagService;
+
     @Override
     @Transactional
     public ChatSession createSessionIfAbsent(User user, String title, Long sessionId) {
@@ -119,36 +122,38 @@ public class ChatServiceImpl implements ChatService {
     }
 
     /**
-     * 调用 AI API 获取回答
+     * 调用 AI API 获取回答（纯文字）
      */
     @Override
     public String getAiAnswer(User user, String prompt, Long sessionId) {
         try {
-            // Determine system prompt based on user role
+            // ── 安全过滤 ──────────────────────────────────────────────────────
+            com.xxzd.study.ai.InputSafetyFilter.CheckResult safety =
+                    com.xxzd.study.ai.InputSafetyFilter.check(prompt);
+            if (safety.isUnsafe()) {
+                return "⚠️ 我是学业辅助 AI 教师，只能在学业范围内为你提供帮助。如果你有学习问题，我很乐意解答！";
+            }
+            // 过长输入截断
+            String safePrompt = com.xxzd.study.ai.InputSafetyFilter.truncate(prompt, 3000);
             String role = (user != null) ? user.getRole() : "student";
             String systemPrompt = systemPromptProvider.getPromptByRole(role);
 
-            // Get History
             List<ChatMessage> history = chatMessageMapper.selectBySessionId(sessionId);
             List<ChatMessage> contextHistory = new ArrayList<>();
             if (history != null && !history.isEmpty()) {
-                // 如果最后一条是当前问题，则从历史记录中排除，避免与 RAG Prompt 重复
                 ChatMessage last = history.get(history.size() - 1);
                 int end = history.size();
-                if ("user".equals(last.getRole()) && prompt != null && last.getContent().trim().equals(prompt.trim())) {
+                if ("user".equals(last.getRole()) && safePrompt != null && last.getContent().trim().equals(safePrompt.trim())) {
                     end = history.size() - 1;
                 }
-                
-                // 取最近 10 条历史记录作为上下文
                 int start = Math.max(0, end - 10);
                 for (int i = start; i < end; i++) {
                     contextHistory.add(history.get(i));
                 }
             }
 
-            String finalPrompt = buildPromptWithKnowledge(prompt);
-            
-            // 使用 CompletableFuture 实现超时控制，防止 AI 服务卡死
+            String finalPrompt = buildPromptWithKnowledge(safePrompt);
+
             java.util.concurrent.CompletableFuture<String> future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
                     String answer = aiChatService.chat(systemPrompt, contextHistory, finalPrompt);
@@ -166,9 +171,8 @@ public class ChatServiceImpl implements ChatService {
                 }
             });
 
-            // 设置 30 秒超时
             try {
-                return future.get(30, java.util.concurrent.TimeUnit.SECONDS);
+                return future.get(120, java.util.concurrent.TimeUnit.SECONDS);
             } catch (java.util.concurrent.TimeoutException e) {
                 future.cancel(true);
                 return "抱歉，AI 思考时间过长，请稍后重试或简化问题。";
@@ -181,68 +185,179 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    /**
+     * 调用 AI API 获取回答（多模态：含图片）
+     */
+    @Override
+    public String getAiAnswerWithImage(User user, String prompt, Long sessionId,
+                                       String imageBase64, String mimeType) {
+        try {
+            // ── 安全过滤 ──────────────────────────────────────────────────────
+            com.xxzd.study.ai.InputSafetyFilter.CheckResult safety =
+                    com.xxzd.study.ai.InputSafetyFilter.check(prompt);
+            if (safety.isUnsafe()) {
+                return "⚠️ 我是学业辅助 AI 教师，只能在学业范围内为你提供帮助。如果你有学习问题，我很乐意解答！";
+            }
+            String safePrompt = com.xxzd.study.ai.InputSafetyFilter.truncate(prompt, 2000);
+
+            String role = (user != null) ? user.getRole() : "student";
+            String systemPrompt = systemPromptProvider.getPromptByRole(role);
+
+            List<ChatMessage> history = chatMessageMapper.selectBySessionId(sessionId);
+            List<ChatMessage> contextHistory = new ArrayList<>();
+            if (history != null && !history.isEmpty()) {
+                int end = history.size();
+                ChatMessage last = history.get(end - 1);
+                if ("user".equals(last.getRole()) && safePrompt != null && last.getContent().trim().equals(safePrompt.trim())) {
+                    end--;
+                }
+                int start = Math.max(0, end - 10);
+                for (int i = start; i < end; i++) {
+                    contextHistory.add(history.get(i));
+                }
+            }
+
+            final String sp = systemPrompt;
+            final List<ChatMessage> ctx = contextHistory;
+            final String p = safePrompt;
+            final String ib64 = imageBase64;
+            final String mt = mimeType;
+
+            java.util.concurrent.CompletableFuture<String> future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return aiChatService.chatWithImage(sp, ctx, p, ib64, mt);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            try {
+                return future.get(60, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                future.cancel(true);
+                return "抱歉，图片分析时间过长，请尝试上传更小的图片或简化问题。";
+            } catch (Exception e) {
+                return "错误：AI 图片分析异常：" + e.getMessage();
+            }
+
+        } catch (Exception e) {
+            return "错误：系统内部错误：" + e.getMessage();
+        }
+    }
+
+    @Override
+    public reactor.core.publisher.Flux<String> streamAiAnswer(User user, String prompt, Long sessionId, boolean deepThink) {
+        try {
+            com.xxzd.study.ai.InputSafetyFilter.CheckResult safety =
+                    com.xxzd.study.ai.InputSafetyFilter.check(prompt);
+            if (safety.isUnsafe()) {
+                return reactor.core.publisher.Flux.just("⚠️ 我是学业辅助 AI 教师，只能在学业范围内为你提供帮助。如果你有学习问题，我很乐意解答！");
+            }
+            String safePrompt = com.xxzd.study.ai.InputSafetyFilter.truncate(prompt, 3000);
+            String role = (user != null) ? user.getRole() : "student";
+            String systemPrompt = systemPromptProvider.getPromptByRole(role);
+
+            if (deepThink) {
+                // 触发 Gemma 4 E4B 原生思考模式的特殊 token，并强制要求使用中文思考
+                systemPrompt = "<|think|>\n" + systemPrompt + "\n\n【重要指令】请务必使用中文（简体）输出你的思考过程。";
+            }
+
+            List<ChatMessage> contextHistory = getContextHistory(sessionId, safePrompt);
+            String finalPrompt = buildPromptWithKnowledge(safePrompt);
+
+            return aiChatService.streamChat(systemPrompt, contextHistory, finalPrompt)
+                    .doOnNext(chunk -> System.out.print(chunk))
+                    .onErrorResume(e -> reactor.core.publisher.Flux.just("错误：AI 服务调用异常：" + e.getMessage()));
+        } catch (Exception e) {
+            return reactor.core.publisher.Flux.just("错误：系统内部错误：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public reactor.core.publisher.Flux<String> streamAiAnswerWithImage(User user, String prompt, Long sessionId,
+                                                                       String imageBase64, String mimeType, boolean deepThink) {
+        try {
+            com.xxzd.study.ai.InputSafetyFilter.CheckResult safety =
+                    com.xxzd.study.ai.InputSafetyFilter.check(prompt);
+            if (safety.isUnsafe()) {
+                return reactor.core.publisher.Flux.just("⚠️ 我是学业辅助 AI 教师，只能在学业范围内为你提供帮助。如果你有学习问题，我很乐意解答！");
+            }
+            String safePrompt = com.xxzd.study.ai.InputSafetyFilter.truncate(prompt, 2000);
+            
+            String role = (user != null) ? user.getRole() : "student";
+            String systemPrompt = systemPromptProvider.getPromptByRole(role);
+
+            if (deepThink) {
+                systemPrompt = "<|think|>\n" + systemPrompt + "\n\n【重要指令】请务必使用中文（简体）输出你的思考过程。";
+            }
+
+            List<ChatMessage> contextHistory = getContextHistory(sessionId, safePrompt);
+
+            return aiChatService.streamChatWithImage(systemPrompt, contextHistory, safePrompt, imageBase64, mimeType)
+                    .doOnNext(chunk -> System.out.print(chunk))
+                    .onErrorResume(e -> reactor.core.publisher.Flux.just("错误：AI 图片分析异常：" + e.getMessage()));
+        } catch (Exception e) {
+            return reactor.core.publisher.Flux.just("错误：系统内部错误：" + e.getMessage());
+        }
+    }
+
+    private List<ChatMessage> getContextHistory(Long sessionId, String safePrompt) {
+        List<ChatMessage> history = chatMessageMapper.selectBySessionId(sessionId);
+        List<ChatMessage> contextHistory = new ArrayList<>();
+        if (history != null && !history.isEmpty()) {
+            int end = history.size();
+            ChatMessage last = history.get(end - 1);
+            if ("user".equals(last.getRole()) && safePrompt != null && last.getContent().trim().equals(safePrompt.trim())) {
+                end--;
+            }
+            int start = Math.max(0, end - 10);
+            for (int i = start; i < end; i++) {
+                contextHistory.add(history.get(i));
+            }
+        }
+        return contextHistory;
+    }
+
     private String buildPromptWithKnowledge(String question) {
         String q = question == null ? "" : question.trim();
-        if (q.isEmpty()) {
-            return "";
-        }
+        if (q.isEmpty()) return "";
 
-        if (!shouldUseKnowledgeBase(q)) {
-            return q;
-        }
+        // 1. 向量检索（BGE-M3，优先）
+        List<DocumentChunk> chunks = null;
+        try {
+            chunks = vectorRagService.search(q, 6);
+        } catch (Exception ignored) {}
 
-        List<String> keywords = extractKeywords(q, 6);
-        if (keywords.isEmpty()) {
-            return q;
-        }
-
-        List<DocumentChunk> chunks = documentChunkMapper.selectByKeywordsLike(keywords, 8);
+        // 2. 降级：关键词检索（向量服务不可用或无向量数据时）
         if (chunks == null || chunks.isEmpty()) {
-            return "【RAG】\n" +
-                    "【任务】你是学业辅助平台的AI教师。\n" +
-                    "【规则】\n" +
-                    "1. 仅在【知识库资料】覆盖问题的部分引用资料作答。\n" +
-                    "2. 资料未覆盖的部分允许补充通用解释/学习建议，但必须明确标注为“通用补充”。\n" +
-                    "3. 不得编造资料中的原文、数据、结论或引用。\n" +
-                    "4. 末尾输出：引用：无（因为本次未检索到资料）。\n\n" +
-                    "【知识库资料】\n（未检索到与问题相关的资料）\n\n" +
-                    "【学生问题】\n" + q;
+            if (!shouldUseKnowledgeBase(q)) return q;
+            List<String> keywords = extractKeywords(q, 6);
+            if (!keywords.isEmpty()) {
+                chunks = documentChunkMapper.selectByKeywordsLike(keywords, 6);
+            }
         }
 
+        if (chunks == null || chunks.isEmpty()) return q;
+
+        // 3. 构建 RAG Prompt
         StringBuilder kb = new StringBuilder();
-        for (int i = 0; i < chunks.size(); i++) {
-            DocumentChunk c = chunks.get(i);
-            if (c == null || c.getContent() == null) {
-                continue;
-            }
+        int idx = 0;
+        for (DocumentChunk c : chunks) {
+            if (c == null || c.getContent() == null) continue;
             String snippet = c.getContent().trim();
-            if (snippet.isEmpty()) {
-                continue;
-            }
-            if (snippet.length() > 400) {
-                snippet = snippet.substring(0, 400);
-            }
-            kb.append("[资料").append(i + 1).append("] ").append(snippet).append("\n");
+            if (snippet.isEmpty()) continue;
+            if (snippet.length() > 500) snippet = snippet.substring(0, 500);
+            kb.append("[资料").append(++idx).append("] ").append(snippet).append("\n");
         }
-        if (kb.length() == 0) {
-            return "【RAG】\n" +
-                    "【任务】你是学业辅助平台的AI教师。\n" +
-                    "【规则】\n" +
-                    "1. 仅在【知识库资料】覆盖问题的部分引用资料作答。\n" +
-                    "2. 资料未覆盖的部分允许补充通用解释/学习建议，但必须明确标注为“通用补充”。\n" +
-                    "3. 不得编造资料中的原文、数据、结论或引用。\n" +
-                    "4. 末尾输出：引用：无（因为本次未检索到可用资料）。\n\n" +
-                    "【知识库资料】\n（未检索到可用资料）\n\n" +
-                    "【学生问题】\n" + q;
-        }
+        if (kb.length() == 0) return q;
 
         return "【RAG】\n" +
                 "【任务】你是学业辅助平台的AI教师。\n" +
                 "【规则】\n" +
                 "1. 优先使用【知识库资料】回答能覆盖的部分，并在对应段落注明引用。\n" +
-                "2. 资料未覆盖的部分允许补充通用解释/学习建议，但必须明确标注为“通用补充”。\n" +
+                "2. 资料未覆盖的部分允许补充通用解释/学习建议，但必须明确标注为\"通用补充\"。\n" +
                 "3. 不得编造资料中的原文、数据、结论或引用。\n" +
-                "4. 末尾输出：引用：资料1,资料2（按实际使用填写；未使用则写“引用：无”）。\n\n" +
+                "4. 末尾输出：引用：资料1,资料2（按实际使用填写；未使用则写\"引用：无\"）。\n\n" +
                 "【知识库资料】\n" + kb +
                 "\n【学生问题】\n" + q;
     }

@@ -1,0 +1,33 @@
+# Aishow Project Rules & Design Guidelines
+
+## Tech Stack
+- **Backend**: Spring Boot 3.3.6, Spring AI, MyBatis, Aliyun OSS (with Local Fallback).
+- **Frontend**: React 18 (Vite), Tailwind CSS, Shadcn UI, Framer Motion.
+- **State Management**: Zustand (Persistent).
+- **Animations**: React Bits inspired animations (Framer Motion).
+
+## Global UI/UX Rules
+1. **Shadcn UI Priority**: Always prioritize using Shadcn UI components for all interface elements (Buttons, Inputs, Cards, Dialogs, etc.). Customize them using CSS variables in `index.css`.
+2. **React Bits Animations**: All new components and page transitions should incorporate premium animations inspired by React Bits:
+    - Use `framer-motion` for entrance/exit animations.
+    - Implement "Spotlight" effects for cards and interactive containers.
+    - Use shimmering/shiny text for highlights and subtitles.
+    - Ensure smooth micro-interactions (magnetic buttons, hover scales).
+3. **Visual Excellence**:
+    - Use dark glassmorphism for main containers.
+    - Use vibrant, curated color palettes (Primary: Emerald/Emerald-600).
+    - Backgrounds should have depth (Grid patterns, gradients, blurred glows).
+4. **SSE & Markdown**:
+    - AI responses must use SSE streaming with real-time Markdown rendering.
+    - Use `highlight.js` for code blocks with consistent dark themes.
+
+## Component Patterns
+- **Animations**: Store reusable animation components in `src/components/animations/`.
+- **UI**: Store Shadcn-style primitives in `src/components/ui/`.
+- **API**: Centralized axios instance in `src/api/http.js` with session support.
+
+## Development Workflow
+- Frontend runs on `localhost:5173`.
+- Backend runs on `localhost:8090`.
+- Proxy all `/api` calls from Vite to the backend.
+- Build output should be synced to Spring Boot `static/app` directory.
