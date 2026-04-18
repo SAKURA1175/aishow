@@ -30,6 +30,11 @@ export default function MarkdownRenderer({ content, className, streaming = false
 
   let thinkContent = ''
   let mainContent = content || ''
+  
+  // 预处理 Gemma 的原生思考 token
+  mainContent = mainContent.replace(/<\|channel>thought\n?(Thinking Process:)?/i, '<think>\n')
+  mainContent = mainContent.replace(/<channel\|>/, '\n</think>\n\n')
+
   let isThinkingOpen = false
 
   const thinkMatch = mainContent.match(/<think>([\s\S]*?)<\/think>/)
@@ -69,7 +74,7 @@ export default function MarkdownRenderer({ content, className, streaming = false
               )}
             </span>
           </summary>
-          <div className="mt-2 text-[13px] text-muted-foreground/70 border-l-2 border-primary/30 pl-3 py-1 mb-2 whitespace-pre-wrap leading-relaxed italic bg-muted/10 rounded-r-md">
+          <div className="mt-2 text-[13px] text-muted-foreground/70 border-l-2 border-primary/30 pl-3 py-1 mb-2 whitespace-pre-wrap break-all overflow-hidden leading-relaxed italic bg-muted/10 rounded-r-md">
             {thinkContent}
           </div>
         </details>

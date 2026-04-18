@@ -1,4 +1,7 @@
 spring:
+  mvc:
+    async:
+      request-timeout: 300000
   config:
     import:
       - classpath:db.properties
@@ -22,6 +25,9 @@ spring:
 
 server:
   port: 8090
+  tomcat:
+    connection-timeout: 300000
+    keep-alive-timeout: 300000
 
 mybatis:
   config-location: classpath:mybatis-config.xml
@@ -29,3 +35,25 @@ mybatis:
 
 # AI 配置由 redis.properties 中的 ai.* 属性提供，通过 AiProperties 注入
 # 当前配置：gemini-2.5-pro via https://new.lemonapi.site/v1（OpenAI 兼容协议）
+#
+# 可选性能保护参数（未配置时使用代码默认值）：
+# ai.embedding.enabled=true
+# ai.embedding.model=text-embedding-bge-m3
+# ai.api.connect-timeout-ms=2000
+# ai.api.read-timeout-ms=90000
+# ai.embedding.api-url=http://localhost:1234
+# ai.embedding.api-key=lm-studio
+# ai.embedding.connect-timeout-ms=2000
+# ai.embedding.read-timeout-ms=15000
+# ai.chroma.base-url=http://localhost:8000/api/v2
+# ai.chroma.tenant=default_tenant
+# ai.chroma.database=default_database
+# ai.chroma.collection=study_docs
+# ai.chroma.connect-timeout-ms=1500
+# ai.chroma.read-timeout-ms=4000
+# ai.rag.retrieval-top-k=4
+# ai.rag.max-prompt-chars=1400
+# ai.rag.max-snippet-chars=320
+# ai.rag.max-history-messages=8
+# ai.rag.max-history-chars=2400
+# ai.rag.max-fallback-scan-rows=2000
