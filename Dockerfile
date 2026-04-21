@@ -25,4 +25,6 @@ WORKDIR /app
 ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
 COPY --from=backend-builder /backend/target/*.jar /app/app.jar
 EXPOSE 8090
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD curl -f http://localhost:8090/actuator/health || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -57,3 +57,23 @@ mybatis:
 # ai.rag.max-history-messages=30   # 最多携带的历史消息条数
 # ai.rag.max-history-chars=12000   # 历史上下文最大字符数（约6000中文字）
 # ai.rag.max-fallback-scan-rows=2000
+
+# Actuator 健康检查与监控
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Study AI
+    description: AI-powered Study Assistant
+    version: 1.0.0
+

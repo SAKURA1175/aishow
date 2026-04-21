@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, MessageSquare, ChevronRight, Trash2, RefreshCw } from 'lucide-react'
+import { Clock, MessageSquare, ChevronRight, Trash2, RefreshCw, Download } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -69,6 +69,50 @@ export default function History() {
     navigate(`/chat?sessionId=${sessionId}`)
   }
 
+  const exportMarkdown = async (session) => {
+    // 确保消息已加载
+    let msgs = messages[session.id]
+    if (!msgs) {
+      try {
+        const res = await listMessages(session.id)
+        if (res.data?.success) {
+          msgs = res.data.data || []
+          setMessages((prev) => ({ ...prev, [session.id]: msgs }))
+        }
+      } catch (_) { return }
+    }
+    if (!msgs || msgs.length === 0) return
+
+    // 构建 Markdown 内容
+    const lines = [
+      `# ${session.title || '无标题对话'}`,
+      `> 导出时间：${new Date().toLocaleString('zh-CN')}`,
+      '',
+      '---',
+      '',
+    ]
+    for (const msg of msgs) {
+      const role = msg.role === 'user' ? '🧑 **用户**' : '🤖 **AI**'
+      // 清除思考过程标签
+      const content = (msg.content || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+      lines.push(`### ${role}\n`)
+      lines.push(content)
+      lines.push('')
+      lines.push('---')
+      lines.push('')
+    }
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${(session.title || '对话').replace(/[/\\?%*:|"<>]/g, '_')}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
@@ -133,6 +177,16 @@ export default function History() {
                         <p className="text-xs font-medium text-muted-foreground/60">{formatDate(session.createTime)}</p>
                       </div>
                       <div className="flex items-center gap-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); exportMarkdown(session) }}
+                          className="h-8 px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors gap-1.5"
+                          title="导出为 Markdown 文件"
+                        >
+                          <Download className="w-3 h-3" />
+                          导出
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

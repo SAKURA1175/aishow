@@ -53,6 +53,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- 健康检查与监控 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- 支持 Spring AI 真正的响应式流式输出 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
