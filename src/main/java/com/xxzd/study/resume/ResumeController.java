@@ -213,4 +213,32 @@ public class ResumeController {
         } catch (Exception ignored) {}
         emitter.complete();
     }
+
+    // ── 简历知识库导入（供爬虫 / 管理员调用）────────────────────────────────
+
+    @Resource
+    private ResumeKbService resumeKbService;
+
+    /**
+     * POST /api/resume/kb/import
+     * Body: { "id": "unique_id", "title": "文档标题", "content": "正文内容" }
+     * 需要 teacher 或 admin 角色
+     */
+    @PostMapping("/kb/import")
+    public ApiResponse<String> kbImport(@RequestBody java.util.Map<String, String> body,
+                                         HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) return ApiResponse.fail("请先登录");
+        String role = user.getRole();
+        if (!"admin".equals(role) && !"teacher".equals(role)) return ApiResponse.fail("无权限");
+
+        String id      = body.get("id");
+        String title   = body.getOrDefault("title", "");
+        String content = body.getOrDefault("content", "");
+        if (id == null || id.isBlank())      return ApiResponse.fail("id 不能为空");
+        if (content.isBlank())               return ApiResponse.fail("content 不能为空");
+
+        resumeKbService.indexKnowledgeEntry(id, title, content);
+        return ApiResponse.ok("已写入: " + id);
+    }
 }
