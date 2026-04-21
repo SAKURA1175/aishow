@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xxzd.study.config.properties.AiProperties;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,16 +18,11 @@ import java.util.Map;
 @Service
 public class EmbeddingService {
 
-    // BGE-M3 在 LM Studio 中的模型 ID
-    private static final String EMBED_MODEL = "text-embedding-bge-m3";
-
     private final AiProperties aiProperties;
-    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
     public EmbeddingService(AiProperties aiProperties) {
         this.aiProperties = aiProperties;
-        this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
     }
 
@@ -37,20 +33,35 @@ public class EmbeddingService {
      * @return float 数组，长度 1024
      */
     public float[] embed(String text) {
-        String url = aiProperties.getApi().getUrl() + "/v1/embeddings";
+        AiProperties.Embedding embedding = aiProperties.getEmbedding();
+        if (embedding == null || !embedding.isEnabled()) {
+            throw new RuntimeException("Embedding 功能已禁用");
+        }
+
+        String baseUrl = valueOrDefault(embedding.getApiUrl(), aiProperties.getApi().getUrl());
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new RuntimeException("Embedding API 地址未配置");
+        }
+
+        String model = valueOrDefault(embedding.getModel(), "text-embedding-bge-m3");
+        String url = trimTrailingSlash(baseUrl) + "/v1/embeddings";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(aiProperties.getApi().getKey());
+        String apiKey = valueOrDefault(embedding.getApiKey(), aiProperties.getApi().getKey());
+        if (apiKey != null && !apiKey.isBlank()) {
+            headers.setBearerAuth(apiKey);
+        }
 
         Map<String, Object> body = Map.of(
-                "model", EMBED_MODEL,
+                "model", model,
                 "input", text
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
         try {
+            RestTemplate restTemplate = createRestTemplate(embedding);
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode embeddingNode = root.path("data").get(0).path("embedding");
@@ -70,6 +81,29 @@ public class EmbeddingService {
      */
     public List<float[]> embedBatch(List<String> texts) {
         return texts.stream().map(this::embed).toList();
+    }
+
+    private RestTemplate createRestTemplate(AiProperties.Embedding embedding) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        int connectTimeout = embedding != null ? embedding.getConnectTimeoutMs() : 2000;
+        int readTimeout = embedding != null ? embedding.getReadTimeoutMs() : 15000;
+        factory.setConnectTimeout(Math.max(500, connectTimeout));
+        factory.setReadTimeout(Math.max(1000, readTimeout));
+        return new RestTemplate(factory);
+    }
+
+    private String valueOrDefault(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
+    }
+
+    private String trimTrailingSlash(String url) {
+        if (url == null) {
+            return null;
+        }
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     /**

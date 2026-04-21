@@ -1,0 +1,89 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aishow-backend
+    restart: unless-stopped
+    ports:
+      - "${AISHOW_BACKEND_PORT:-8090}:8090"
+    environment:
+      JDBC_DRIVER: ${AISHOW_JDBC_DRIVER:-com.mysql.cj.jdbc.Driver}
+      JDBC_URL: ${AISHOW_JDBC_URL:-jdbc:mysql://host.docker.internal:3306/study_ai?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+      JDBC_USERNAME: ${AISHOW_JDBC_USERNAME:-root}
+      JDBC_PASSWORD: ${AISHOW_JDBC_PASSWORD:-1234}
+      REDIS_HOST: ${AISHOW_REDIS_HOST:-host.docker.internal}
+      REDIS_PORT: ${AISHOW_REDIS_PORT:-6379}
+      AI_MODEL: ${AISHOW_AI_MODEL:-gemma-4-e4b-it}
+      AI_API_URL: ${AISHOW_AI_API_URL:-http://host.docker.internal:1234}
+      AI_API_KEY: ${AISHOW_AI_API_KEY:-lm-studio}
+      AI_API_CONNECT_TIMEOUT_MS: ${AISHOW_AI_API_CONNECT_TIMEOUT_MS:-2000}
+      AI_API_READ_TIMEOUT_MS: ${AISHOW_AI_API_READ_TIMEOUT_MS:-90000}
+      AI_EMBEDDING_ENABLED: ${AISHOW_AI_EMBEDDING_ENABLED:-true}
+      AI_EMBEDDING_MODEL: ${AISHOW_AI_EMBEDDING_MODEL:-text-embedding-bge-m3}
+      AI_EMBEDDING_API_URL: ${AISHOW_AI_EMBEDDING_API_URL:-http://host.docker.internal:1234}
+      AI_EMBEDDING_API_KEY: ${AISHOW_AI_EMBEDDING_API_KEY:-lm-studio}
+      AI_CHROMA_BASE_URL: ${AISHOW_AI_CHROMA_BASE_URL:-http://host.docker.internal:8000/api/v2}
+      JAVA_TOOL_OPTIONS: ${AISHOW_JAVA_TOOL_OPTIONS:--Duser.home=/app/data -Dfile.encoding=UTF-8}
+    volumes:
+      - aishow-app-data:/app/data
+    depends_on:
+      searxng:
+        condition: service_started
+      open-webui:
+        condition: service_started
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: aishow-searxng
+    restart: unless-stopped
+    ports:
+      - "${AISHOW_SEARXNG_PORT:-8081}:8080"
+    volumes:
+      - ./ops/open-webui-searxng/searxng:/etc/searxng:rw
+      - aishow-searxng-cache:/var/cache/searxng:rw
+    environment:
+      SEARXNG_BASE_URL: http://localhost:${AISHOW_SEARXNG_PORT:-8081}/
+      SEARXNG_PORT: 8080
+      SEARXNG_BIND_ADDRESS: 0.0.0.0
+      SEARXNG_SECRET: ${AISHOW_SEARXNG_SECRET:-aishow-local-searxng-secret}
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: aishow-open-webui
+    restart: unless-stopped
+    depends_on:
+      searxng:
+        condition: service_started
+    ports:
+      - "${AISHOW_OPEN_WEBUI_PORT:-3001}:8080"
+    volumes:
+      - aishow-open-webui-data:/app/backend/data
+    environment:
+      WEBUI_URL: http://localhost:${AISHOW_OPEN_WEBUI_PORT:-3001}
+      ENABLE_SIGNUP: "true"
+      ENABLE_OPENAI_API: "true"
+      ENABLE_OLLAMA_API: "false"
+      OPENAI_API_BASE_URL: ${AISHOW_OPENAI_API_BASE_URL:-http://host.docker.internal:1234/v1}
+      OPENAI_API_BASE_URLS: ${AISHOW_OPENAI_API_BASE_URL:-http://host.docker.internal:1234/v1}
+      OPENAI_API_KEY: ${AISHOW_OPENAI_API_KEY:-sk-lmstudio}
+      OPENAI_API_KEYS: ${AISHOW_OPENAI_API_KEY:-sk-lmstudio}
+      TASK_MODEL_EXTERNAL: ${AISHOW_OPEN_WEBUI_TASK_MODEL:-gemma-4-e4b-it}
+      AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST: "30"
+      ENABLE_WEB_SEARCH: "true"
+      ENABLE_RAG_WEB_SEARCH: "true"
+      WEB_SEARCH_ENGINE: searxng
+      RAG_WEB_SEARCH_ENGINE: searxng
+      SEARXNG_QUERY_URL: http://searxng:8080/search?q=<query>&format=json
+      ENABLE_SEARCH_QUERY_GENERATION: "true"
+      WEB_SEARCH_RESULT_COUNT: "5"
+      RAG_WEB_SEARCH_RESULT_COUNT: "5"
+      WEB_LOADER_CONCURRENT_REQUESTS: "2"
+      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: "2"
+      WEB_LOADER_TIMEOUT: "15"
+      BYPASS_WEB_SEARCH_WEB_LOADER: "false"
+
+volumes:
+  aishow-app-data:
+  aishow-open-webui-data:
+  aishow-searxng-cache:

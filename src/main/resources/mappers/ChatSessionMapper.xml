@@ -38,4 +38,8 @@
     <delete id="deleteByUserId">
         DELETE FROM chat_session WHERE user_id = #{userId}
     </delete>
+
+    <update id="updateTitle">
+        UPDATE chat_session SET title = #{title} WHERE id = #{id}
+    </update>
 </mapper>

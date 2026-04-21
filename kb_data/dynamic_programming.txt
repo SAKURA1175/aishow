@@ -1,0 +1,1062 @@
+# Dynamic programming
+
+Dynamic programming is both a mathematical optimization method and an algorithmic paradigm. The method was developed by Richard Bellman in the 1950s and has found applications in numerous fields, such as aerospace engineering and economics.
+In both contexts it refers to simplifying a complicated problem by breaking it down into simpler sub-problems in a recursive manner. While some decision problems cannot be taken apart this way, decisions that span several points in time do often break apart recursively. Likewise, in computer science, if a problem can be solved optimally by breaking it into sub-problems and then recursively finding the optimal solutions to the sub-problems, then it is said to have optimal substructure.
+If sub-problems can be nested recursively inside larger problems, so that dynamic programming methods are applicable, then there is a relation between the value of the larger problem and the values of the sub-problems. In the optimization literature this relationship is called the Bellman equation.
+
+
+Overview
+
+
+Mathematical optimization
+In terms of mathematical optimization, dynamic programming usually refers to simplifying a decision by breaking it down into a sequence of decision steps over time.
+This is done by defining a sequence of value functions V1, V2, ..., Vn taking y as an argument representing the state of the system at times i from 1 to n.
+The definition of Vn(y) is the value obtained in state y at the last time n.
+The values Vi at earlier times i = n −1, n − 2, ..., 2, 1 can be found by working backwards, using a recursive relationship called the Bellman equation.
+For i = 2, ..., n, Vi−1 at any state y is calculated from Vi by maximizing a simple function (usually the sum) of the gain from a decision at time i − 1 and the function Vi at the new state of the system if this decision is made.
+Since Vi has already been calculated for the needed states, the above operation yields Vi−1 for those states.
+Finally, V1 at the initial state of the system is the value of the optimal solution. The optimal values of the decision variables can be recovered, one by one, by tracking back the calculations already performed.
+
+
+Control theory
+In control theory, a typical problem is to find an admissible control
+
+
+
+
+
+            u
+
+
+            ∗
+
+
+
+
+    {\displaystyle \mathbf {u} ^{\ast }}
+
+ which causes the system
+
+
+
+
+
+
+
+                x
+
+              ˙
+
+
+
+        (
+        t
+        )
+        =
+
+          g
+
+
+          (
+
+
+              x
+
+            (
+            t
+            )
+            ,
+
+              u
+
+            (
+            t
+            )
+            ,
+            t
+
+          )
+
+
+
+    {\displaystyle {\dot {\mathbf {x} }}(t)=\mathbf {g} \left(\mathbf {x} (t),\mathbf {u} (t),t\right)}
+
+ to follow an admissible trajectory
+
+
+
+
+
+            x
+
+
+            ∗
+
+
+
+
+    {\displaystyle \mathbf {x} ^{\ast }}
+
+ on a continuous time interval
+
+
+
+
+          t
+
+            0
+
+
+        ≤
+        t
+        ≤
+
+          t
+
+            1
+
+
+
+
+    {\displaystyle t_{0}\leq t\leq t_{1}}
+
+ that minimizes a cost function
+
+
+
+
+        J
+        =
+        b
+
+          (
+
+
+              x
+
+            (
+
+              t
+
+                1
+
+
+            )
+            ,
+
+              t
+
+                1
+
+
+
+          )
+
+        +
+
+          ∫
+
+
+              t
+
+                0
+
+
+
+
+
+              t
+
+                1
+
+
+
+
+        f
+
+          (
+
+
+              x
+
+            (
+            t
+            )
+            ,
+
+              u
+
+            (
+            t
+            )
+            ,
+            t
+
+          )
+
+
+          d
+
+        t
+
+
+    {\displaystyle J=b\left(\mathbf {x} (t_{1}),t_{1}\right)+\int _{t_{0}}^{t_{1}}f\left(\mathbf {x} (t),\mathbf {u} (t),t\right)\mathrm {d} t}
+
+
+The solution to this problem is an optimal control law or policy
+
+
+
+
+
+            u
+
+
+            ∗
+
+
+        =
+        h
+        (
+
+          x
+
+        (
+        t
+        )
+        ,
+        t
+        )
+
+
+    {\displaystyle \mathbf {u} ^{\ast }=h(\mathbf {x} (t),t)}
+
+, which produces an optimal trajectory
+
+
+
+
+
+            x
+
+
+            ∗
+
+
+
+
+    {\displaystyle \mathbf {x} ^{\ast }}
+
+ and a cost-to-go function
+
+
+
+
+          J
+
+            ∗
+
+
+
+
+    {\displaystyle J^{\ast }}
+
+. The latter obeys the fundamental equation of dynamic programming:
+
+
+
+
+        −
+
+          J
+
+            t
+
+
+            ∗
+
+
+        =
+
+          min
+
+
+              u
+
+
+
+
+          {
+
+            f
+
+              (
+
+
+                  x
+
+                (
+                t
+                )
+                ,
+
+                  u
+
+                (
+                t
+                )
+                ,
+                t
+
+              )
+
+            +
+
+              J
+
+                x
+
+
+                ∗
+
+
+                    T
+
+
+
+
+
+              g
+
+
+              (
+
+
+                  x
+
+                (
+                t
+                )
+                ,
+
+                  u
+
+                (
+                t
+                )
+                ,
+                t
+
+              )
+
+
+          }
+
+
+
+    {\displaystyle -J_{t}^{\ast }=\min _{\mathbf {u} }\left\{f\left(\mathbf {x} (t),\mathbf {u} (t),t\right)+J_{x}^{\ast {\mathsf {T}}}\mathbf {g} \left(\mathbf {x} (t),\mathbf {u} (t),t\right)\right\}}
+
+
+a partial differential equation known as the Hamilton–Jacobi–Bellman equation, in which
+
+
+
+
+          J
+
+            x
+
+
+            ∗
+
+
+        =
+
+
+
+              ∂
+
+                J
+
+                  ∗
+
+
+
+
+              ∂
+
+                x
+
+
+
+
+        =
+
+
+            [
+
+
+
+
+                    ∂
+
+                      J
+
+                        ∗
+
+
+
+
+                    ∂
+
+                      x
+
+                        1
+
+
+
+
+
+
+
+
+
+
+
+
+                    ∂
+
+                      J
+
+                        ∗
+
+
+
+
+                    ∂
+
+                      x
+
+                        2
+
+
+
+
+
+
+
+
+
+              …
+
+
+
+
+
+
+
+                    ∂
+
+                      J
+
+                        ∗
+
+
+
+
+                    ∂
+
+                      x
+
+                        n
+
+
+
+
+
+
+            ]
+
+
+
+              T
+
+
+
+
+
+    {\displaystyle J_{x}^{\ast }={\frac {\partial J^{\ast }}{\partial \mathbf {x} }}=\left[{\frac {\partial J^{\ast }}{\partial x_{1}}}~~~~{\frac {\partial J^{\ast }}{\partial x_{2}}}~~~~\dots ~~~~{\frac {\partial J^{\ast }}{\partial x_{n}}}\right]^{\mathsf {T}}}
+
+ and
+
+
+
+
+          J
+
+            t
+
+
+            ∗
+
+
+        =
+
+
+
+              ∂
+
+                J
+
+                  ∗
+
+
+
+
+              ∂
+              t
+
+
+
+
+
+    {\displaystyle J_{t}^{\ast }={\frac {\partial J^{\ast }}{\partial t}}}
+
+. One finds that minimizing
+
+
+
+
+          u
+
+
+
+    {\displaystyle \mathbf {u} }
+
+ in terms of
+
+
+
+        t
+
+
+    {\displaystyle t}
+
+,
+
+
+
+
+          x
+
+
+
+    {\displaystyle \mathbf {x} }
+
+, and the unknown function
+
+
+
+
+          J
+
+            x
+
+
+            ∗
+
+
+
+
+    {\displaystyle J_{x}^{\ast }}
+
+ and then substitutes the result into the Hamilton–Jacobi–Bellman equation to get the partial differential equation to be solved with boundary condition
+
+
+
+        J
+
+          (
+
+            t
+
+              1
+
+
+          )
+
+        =
+        b
+
+          (
+
+
+              x
+
+            (
+
+              t
+
+                1
+
+
+            )
+            ,
+
+              t
+
+                1
+
+
+
+          )
+
+
+
+    {\displaystyle J\left(t_{1}\right)=b\left(\mathbf {x} (t_{1}),t_{1}\right)}
+
+. In practice, this generally requires numerical techniques for some discrete approximation to the exact optimization relationship.
+Alternatively, the continuous process can be approximated by a discrete system, which leads to a following recurrence relation analog to the Hamilton–Jacobi–Bellman equation:
+
+
+
+
+
+          J
+
+            k
+
+
+            ∗
+
+
+
+          (
+
+
+              x
+
+
+              n
+              −
+              k
+
+
+          )
+
+        =
+
+          min
+
+
+
+                u
+
+
+                n
+                −
+                k
+
+
+
+
+
+          {
+
+
+
+
+                  f
+                  ^
+
+
+
+
+              (
+
+
+
+                    x
+
+
+                    n
+                    −
+                    k
+
+
+                ,
+
+
+                    u
+
+
+                    n
+                    −
+                    k
+
+
+
+              )
+
+            +
+
+              J
+
+                k
+                −
+                1
+
+
+                ∗
+
+
+
+              (
+
+
+
+
+
+                        g
+
+                      ^
+
+
+
+
+                  (
+
+
+
+                        x
+
+
+                        n
+                        −
+                        k
+
+
+                    ,
+
+
+                        u
+
+
+                        n
+                        −
+                        k
+
+
+
+                  )
+
+
+              )
+
+
+          }
+
+
+
+    {\displaystyle J_{k}^{\ast }\left(\mathbf {x} _{n-k}\right)=\min _{\mathbf {u} _{n-k}}\left\{{\hat {f}}\left(\mathbf {x} _{n-k},\mathbf {u} _{n-k}\right)+J_{k-1}^{\ast }\left({\hat {\mathbf {g} }}\left(\mathbf {x} _{n-k},\mathbf {u} _{n-k}\right)\right)\right\}}
+
+
+at the
+
+
+
+        k
+
+
+    {\displaystyle k}
+
+-th stage of
+
+
+
+        n
+
+
+    {\displaystyle n}
+
+ equally spaced discrete time intervals, and where
+
+
+
+
+
+
+              f
+              ^
+
+
+
+
+
+    {\displaystyle {\hat {f}}}
+
+ and
+
+
+
+
+
+
+
+                g
+
+              ^
+
+
+
+
+
+    {\displaystyle {\hat {\mathbf {g} }}}
+
+ denote discrete approximations to
+
+
+
+        f
+
+
+    {\displaystyle f}
+
+ and
+
+
+
+
+          g
+
+
+
+    {\displaystyle \mathbf {g} }
+
+. This functional equation is known as the Bellman equation, which can be solved for an exact solution of the discrete approximation of the optimization equation.
+
+
+Example from economics: Ramsey's problem of optimal saving
+
+In economics, the objective is generally to maximize (rather than minimize) some dynamic social welfare function. In Ramsey's problem, this function relates amounts of consumption to levels of utility. Loosely speaking, the planner faces the trade-off between contemporaneous consumption and future consumption (via investment in capital stock that is used in production), known as intertemporal choice. Future consumption is discounted at a constant rate
+
+
+
+        β
+        ∈
+        (
+        0
+        ,
+        1
+        )
+
+
+    {\displaystyle \beta \in (0,1)}
+
+. A discrete approximation to the transition equation of capital is given by
+
+
+
+
+
+          k
+
+            t
+            +
+            1
+
+
+        =
+
+
+
+              g
+              ^
+
+
+
+
+          (
+
+
+              k
+
+                t
+
+
+            ,
+
+              c
+
+                t
+
+
+
+          )
+
+        =
+        f
+        (
+
+          k
+
+            t
+
+
+        )
+        −
+
+          c
+
+            t
+
+
+
+
+    {\displaystyle k_{t+1}={\hat {g}}\left(k_{t},c_{t}\right)=f(k_{t})-c_{t}}
+
+
+where
+
+
+
+        c
+
+
+    {\displaystyle c}
+
+ is consumption,
+
+
+
+        k
+
+
+    {\displaystyle k}
+
+ is capital, and
+
+
+
+        f
+
+
+    {\displaystyle f}
+
+ is a production function satisfying the Inada conditions. An initial capital stock
+
+
+
+
+          k
+
+            0
+
+
+        >
+        0
+
+
+    {\displaystyle k_{0}>0}
+
+ is assumed.
+Let
+
+
+
+
+          c
+
+            t
+
+
+
+
+    {\displaystyle c_{t}}
+
+ be consumption in period t, and assume consumption yields utility
+
+
+
+        u
+        (
+
+          c
+
+            t
+
+
+        )
+        =
+        ln
+        ⁡
+        (
+
+          c
+
+            t
+
+
+        )
+
+
+    {\displaystyle u(c_{t})=\ln(c_{t})}
+
+ as long as the consumer lives. Assume the consumer is impatient, so that he discounts future utility by a factor b each period, where
+
+
+
+        0
+        <
+        b
+        <
+        1
+
+
+    {\displaystyle 0<b<1}
+
+. Let
+
+
+
+
+          k
+
+            t
+
+
+
+
+    {\displaystyle k_{t}}
+
+ be capital in period t. Assume initial capital is a given amount
+
+
+
+
+          k
+
+            0
+
+
+        >
+        0
+
+
+    {\displaystyle k_{0}>0}
+
+, and suppose that this period's capital and consumption determine next period's capital as
+
+
+
+
+          k
+
+            t
+            +
+            1
+
+
+  
+
+[内容截取，完整内容请查阅 Wikipedia]

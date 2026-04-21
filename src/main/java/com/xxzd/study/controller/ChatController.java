@@ -2,12 +2,17 @@ package com.xxzd.study.controller;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,16 +29,33 @@ import com.xxzd.study.domain.ChatSession;
 import com.xxzd.study.domain.User;
 import com.xxzd.study.service.ChatService;
 import com.xxzd.study.service.LearningProfileService;
+import com.xxzd.study.service.impl.ChatServiceImpl;
+import com.xxzd.study.mapper.ChatSessionMapper;
 
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
+
+    /** 共享 SSE 推送线程池，避免每次请求创建新线程 */
+    private static final ExecutorService SSE_EXECUTOR = new ThreadPoolExecutor(
+            2, Runtime.getRuntime().availableProcessors() * 2,
+            60L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(200),
+            r -> { Thread t = new Thread(r, "sse-stream"); t.setDaemon(true); return t; },
+            new ThreadPoolExecutor.CallerRunsPolicy()
+    );
 
     @Resource
     private ChatService chatService;
 
     @Resource
     private LearningProfileService learningProfileService;
+
+    @Resource
+    private ChatSessionMapper chatSessionMapper;
+
+    @Resource
+    private com.xxzd.study.ai.AiChatService aiChatService;
 
     @PostMapping("/ask")
     public ApiResponse<ChatAnswer> ask(@RequestBody ChatQuestion question, HttpSession session) {
@@ -79,6 +101,7 @@ public class ChatController {
     public SseEmitter stream(@RequestParam("question") String question,
                               @RequestParam(required = false) Long sessionId,
                               @RequestParam(required = false, defaultValue = "false") boolean deepThink,
+                              @RequestParam(required = false, defaultValue = "false") boolean webSearch,
                               HttpSession session) {
         SseEmitter emitter = new SseEmitter(300_000L); // 5分钟，深度思考模式下模型生成较慢
 
@@ -96,9 +119,7 @@ public class ChatController {
         }
 
         final String q = question.trim();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> streamAnswer(emitter, user, q, sessionId, null, null, deepThink));
-        executor.shutdown();
+        SSE_EXECUTOR.submit(() -> streamAnswer(emitter, user, q, sessionId, null, null, deepThink, webSearch));
         return emitter;
     }
 
@@ -127,9 +148,8 @@ public class ChatController {
             // 无图片则降级走普通流
             final String q = req.getQuestion().trim();
             final boolean deepThink = req.getDeepThink() != null && req.getDeepThink();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(() -> streamAnswer(emitter, user, q, req.getSessionId(), null, null, deepThink));
-            executor.shutdown();
+            final boolean webSearch = req.getWebSearch() != null && req.getWebSearch();
+            SSE_EXECUTOR.submit(() -> streamAnswer(emitter, user, q, req.getSessionId(), null, null, deepThink, webSearch));
             return emitter;
         }
 
@@ -137,23 +157,32 @@ public class ChatController {
         final String ib64 = req.getImageBase64();
         final String mt = req.getMimeType();
         final boolean deepThink = req.getDeepThink() != null && req.getDeepThink();
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> streamAnswer(emitter, user, q, req.getSessionId(), ib64, mt, deepThink));
-        executor.shutdown();
+        final boolean webSearch = req.getWebSearch() != null && req.getWebSearch();
+        SSE_EXECUTOR.submit(() -> streamAnswer(emitter, user, q, req.getSessionId(), ib64, mt, deepThink, webSearch));
         return emitter;
     }
 
     /** 通用 SSE 推送逻辑（纯文字 or 多模态复用同一方法） */
     private void streamAnswer(SseEmitter emitter, com.xxzd.study.domain.User user,
-                               String q, Long sessionId, String imageBase64, String mimeType, boolean deepThink) {
+                               String q, Long sessionId, String imageBase64, String mimeType, boolean deepThink, boolean webSearch) {
         try {
             com.xxzd.study.domain.ChatSession chatSession =
                     chatService.createSessionIfAbsent(user, q, sessionId);
             long sid = chatSession.getId();
+            boolean isFirstMessage = chatSession.getTitle() == null
+                    || chatSession.getTitle().startsWith(q.substring(0, Math.min(q.length(), 5)))
+                    || "新的对话".equals(chatSession.getTitle());
 
             emitter.send(SseEmitter.event()
                     .name("meta")
                     .data("{\"sessionId\":\"" + sid + "\"}"));
+
+            // 联网搜索加载态提示
+            if (webSearch) {
+                try {
+                    emitter.send(SseEmitter.event().name("status").data("正在联网搜索相关信息…"));
+                } catch (Exception ignored) {}
+            }
 
             // 保存用户消息（含图片标注）
             String userContent = (imageBase64 != null && !imageBase64.isBlank())
@@ -163,14 +192,25 @@ public class ChatController {
 
             // 调用 AI (真流式)
             reactor.core.publisher.Flux<String> flux;
+            // ★ 在同一线程立刻捕获 RAG sources（buildPromptWithKnowledge 在这个线程里跑）
+            java.util.concurrent.atomic.AtomicReference<List<Map<String, String>>> capturedRefs =
+                    new java.util.concurrent.atomic.AtomicReference<>(new java.util.ArrayList<>());
             try {
                 if (imageBase64 != null && !imageBase64.isBlank()) {
-                    flux = chatService.streamAiAnswerWithImage(user, q, sid, imageBase64, mimeType, deepThink);
+                    flux = chatService.streamAiAnswerWithImage(user, q, sid, imageBase64, mimeType, deepThink, webSearch);
                 } else {
-                    flux = chatService.streamAiAnswer(user, q, sid, deepThink);
+                    flux = chatService.streamAiAnswer(user, q, sid, deepThink, webSearch);
+                }
+                // buildPromptWithKnowledge 已执行，ThreadLocal 已就绪，立即拷贝
+                List<Map<String, String>> src = ChatServiceImpl.getRagSources();
+                if (src != null && !src.isEmpty()) {
+                    capturedRefs.set(new java.util.ArrayList<>(src));
                 }
             } catch (Exception e) {
                 flux = reactor.core.publisher.Flux.just("抱歉，AI服务暂时不可用。" + e.getMessage());
+            } finally {
+                // 确保 ThreadLocal 在线程池复用场景下不会泄漏到下一个请求
+                ChatServiceImpl.clearRagSources();
             }
 
             StringBuilder fullAnswerBuilder = new StringBuilder();
@@ -187,7 +227,7 @@ public class ChatController {
                         } catch (Exception e) {
                             emitter.completeWithError(e);
                         }
-                    },
+                    } ,
                     err -> {
                         try {
                             emitter.send(SseEmitter.event().data("\n[出错: " + err.getMessage() + "]"));
@@ -198,12 +238,36 @@ public class ChatController {
                     },
                     () -> {
                         try {
+                            // 发送引用文献事件（使用同线程捕获的 refs）
+                            List<Map<String, String>> refs = capturedRefs.get();
+                            if (refs != null && !refs.isEmpty()) {
+                                try {
+                                    String refsJson = new ObjectMapper().writeValueAsString(refs);
+                                    emitter.send(SseEmitter.event().name("refs").data(refsJson));
+                                } catch (Exception ignored) {}
+                            }
                             emitter.send(SseEmitter.event().data("[DONE]"));
                             emitter.complete();
                         } catch (Exception ignored) {}
-                        chatService.saveMessage(sid, "ai", fullAnswerBuilder.toString());
-                        // recordQuestion 会调用 AI 分析画像，可以异步执行，这里交给它内部处理
+
+                        String finalAnswer = fullAnswerBuilder.toString();
+                        chatService.saveMessage(sid, "ai", finalAnswer);
                         learningProfileService.recordQuestion(user, q);
+
+                        // 异步生成标题（仅对新会话）
+                        if (isFirstMessage) {
+                            Thread titleThread = new Thread(() -> {
+                                try {
+                                    String rawTitle = aiChatService.generateTitle(q, finalAnswer);
+                                    String title = rawTitle == null ? null : rawTitle.replaceAll("[\"|'「」《》＃\\*]", "").trim();
+                                    if (title != null && !title.isBlank() && title.length() <= 40) {
+                                        chatSessionMapper.updateTitle(sid, title);
+                                    }
+                                } catch (Exception ignored) {}
+                            }, "title-gen-" + sid);
+                            titleThread.setDaemon(true);
+                            titleThread.start();
+                        }
                     }
             );
 
@@ -263,6 +327,12 @@ public class ChatController {
         if (!(userObj instanceof User)) {
             return ApiResponse.fail("未登录");
         }
+        User user = (User) userObj;
+        // 鉴权：校验会话归属，防止越权访问
+        ChatSession chatSession = chatSessionMapper.selectById(sessionId);
+        if (chatSession == null || !chatSession.getUserId().equals(user.getId())) {
+            return ApiResponse.fail("无权访问该会话");
+        }
         List<ChatMessage> messages = chatService.listMessagesBySession(sessionId);
         List<ChatMessageView> list = new ArrayList<>();
         for (ChatMessage m : messages) {
@@ -294,6 +364,7 @@ public class ChatController {
         private String imageBase64;
         private String mimeType;
         private Boolean deepThink;
+        private Boolean webSearch;
 
         public String getQuestion() { return question; }
         public void setQuestion(String question) { this.question = question; }
@@ -305,6 +376,8 @@ public class ChatController {
         public void setMimeType(String mimeType) { this.mimeType = mimeType; }
         public Boolean getDeepThink() { return deepThink; }
         public void setDeepThink(Boolean deepThink) { this.deepThink = deepThink; }
+        public Boolean getWebSearch() { return webSearch; }
+        public void setWebSearch(Boolean webSearch) { this.webSearch = webSearch; }
     }
 
     public static class ChatQuestion {

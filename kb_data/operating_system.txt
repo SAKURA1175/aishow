@@ -1,0 +1,66 @@
+# Operating system
+
+An operating system (OS) is system software that manages computer hardware and software resources, and provides common services for computer programs.
+Time-sharing operating systems schedule tasks for efficient use of the system and may also include accounting software for cost allocation of processor time, mass storage, peripherals, and other resources.
+For hardware functions such as input and output and memory allocation, the operating system acts as an intermediary between programs and the computer hardware, although the application code is usually executed directly by the hardware and frequently makes system calls to an OS function or is interrupted by it. Operating systems are found on many devices that contain a computer – from cellular phones and video game consoles to web servers and supercomputers.
+As of November 2025, Android is the most popular operating system with a 38% market share, followed by Microsoft Windows at 33%, iOS and iPadOS at 15%, macOS at 4%, and Linux at 1%. Android, iOS, and iPadOS are operating systems for mobile devices such as smartphones, while Windows, macOS, and Linux are for desktop computers. Linux distributions are dominant in the server and supercomputing sectors. Other specialized classes of operating systems (special-purpose operating systems), such as embedded and real-time systems, exist for many applications. Security-focused operating systems also exist. Some operating systems have low system requirements (e.g. light-weight Linux distribution). Others may have higher system requirements.
+Some operating systems require installation or may come pre-installed with purchased computers (OEM-installation), whereas others may run directly from media (i.e. live CD) or flash memory (i.e. a LiveUSB from a USB stick).
+
+
+Definition and purpose
+An operating system is difficult to define, but has been called "the layer of software that manages a computer's resources for its users and their applications". Operating systems include the software that is always running, called a kernel—but can include other software as well. The two other types of programs that can run on a computer are system programs—which are associated with the operating system, but may not be part of the kernel—and applications—all other software.
+There are three main purposes that an operating system fulfills:
+
+Operating systems allocate resources between different applications, deciding when they will receive central processing unit (CPU) time or space in memory. On modern personal computers, users often want to run several applications at once. In order to ensure that one program cannot monopolize the computer's limited hardware resources, the operating system gives each application a share of the resource, either in time (CPU) or space (memory). The operating system also must isolate applications from each other to protect them from errors and security vulnerabilities in another application's code, but enable communications between different applications.
+Operating systems provide an interface that abstracts the details of accessing hardware details (such as physical memory) to make things easier for programmers. Virtualization also enables the operating system to mask limited hardware resources; for example, virtual memory can provide a program with the illusion of nearly unlimited memory that exceeds the computer's actual memory.
+Operating systems provide common services, such as an interface for accessing network and disk devices. This enables an application to be run on different hardware without needing to be rewritten. Which services to include in an operating system varies greatly, and this functionality makes up the great majority of code for most operating systems.
+
+
+Types of operating systems
+
+
+Multicomputer operating systems
+With multiprocessors multiple CPUs share memory. A multicomputer or cluster computer has multiple CPUs, each of which has its own memory. Multicomputers were developed because large multiprocessors are difficult to engineer and prohibitively expensive; they are universal in cloud computing because of the size of the machine needed. The different CPUs often need to send and receive messages to each other; to ensure good performance, the operating systems for these machines need to minimize this copying of packets. Newer systems are often multiqueue—separating groups of users into separate queues—to reduce the need for packet copying and support more concurrent users. Another technique is remote direct memory access, which enables each CPU to access memory belonging to other CPUs. Multicomputer operating systems often support remote procedure calls where a CPU can call a procedure on another CPU, or distributed shared memory, in which the operating system uses virtualization to generate shared memory that does not physically exist.
+
+
+Distributed systems
+A distributed system is a group of distinct, networked computers—each of which might have their own operating system and file system. Unlike multicomputers, they may be dispersed anywhere in the world. Middleware, an additional software layer between the operating system and applications, is often used to improve consistency. Although it functions similarly to an operating system, it is not a true operating system.
+
+
+Embedded
+Embedded operating systems are designed to be used in embedded computer systems, whether they are internet of things objects or not connected to a network. Embedded systems include many household appliances. The distinguishing factor is that they do not load user-installed software. Consequently, they do not need protection between different applications, enabling simpler designs. Very small operating systems might run in less than 10 kilobytes,  and the smallest are for smart cards.  Examples include Embedded Linux, QNX, VxWorks, and the extra-small systems RIOT and TinyOS.
+
+
+Real-time
+A real-time operating system is an operating system that guarantees to process events or data by or at a specific moment in time. Hard real-time systems require exact timing and are common in manufacturing, avionics, military, and other similar uses. With soft real-time systems, the occasional missed event is acceptable; this category often includes audio or multimedia systems, as well as smartphones. In order for hard real-time systems be sufficiently exact in their timing, often they are just a library with no protection between applications, such as eCos.
+
+
+Hypervisor
+A hypervisor is an operating system that runs a virtual machine. The virtual machine is an application that emulates hardware; in other words, it operates as much as possible like the actual hardware the operating system was designed to run on. Virtual machines can be paused, saved, and resumed, making them useful for operating systems research, development, and debugging. They also enhance portability by enabling applications to be run on a computer even if they are not compatible with the base operating system.
+
+
+Library
+A library operating system (libOS) is one in which the services that a typical operating system provides, such as networking, are provided in the form of libraries and composed with a single application and configuration code to construct a unikernel:
+ a specialized (only the absolute necessary pieces of code are extracted from libraries and bound together
+), single address space, machine image that can be deployed to cloud or embedded environments.
+The operating system code and application code are not executed in separated protection domains (there is only a single application running, at least conceptually, so there is no need to prevent interference between applications) and OS services are accessed via simple library calls (potentially inlining them based on compiler thresholds), without the usual overhead of context switches,
+ in a way similarly to embedded and real-time OSes. This overhead is not negligible: to the direct cost of mode switching it's necessary to add the indirect pollution of important processor structures (like CPU caches, the instruction pipeline, and so on) which affects both user-mode and kernel-mode performance.
+
+
+History
+
+The first computers in the late 1940s and 1950s were directly programmed either with plugboards or with machine code inputted on media such as punch cards, without programming languages or operating systems. After the introduction of the transistor in the mid-1950s, mainframes began to be built. These still needed professional operators who manually do what a modern operating system would do, such as scheduling programs to run, but mainframes still had rudimentary operating systems such as Fortran Monitor System (FMS) and IBSYS. In the 1960s, IBM introduced the first series of intercompatible computers (System/360). All of them ran the same operating system—OS/360—which consisted of millions of lines of assembly language that had thousands of bugs. The OS/360 also was the first popular operating system to support multiprogramming, such that, if one job is blocked waiting for an input/output (I/O) operation to complete, another job can use the CPU. Holding multiple jobs in memory required memory partitioning and safeguards against one job accessing the memory allocated to a different job.
+Around the same time, teleprinters began to be used as terminals so multiple users could access the computer simultaneously. The operating system MULTICS was intended to allow hundreds of users to access a large computer. Despite its limited adoption, it can be considered the precursor to cloud computing. The UNIX operating system originated as a development of MULTICS for a single user. Because UNIX's source code was available, it became the basis of other, incompatible operating systems, of which the most successful were AT&T's System V and the University of California's Berkeley Software Distribution (BSD). To increase compatibility, the IEEE released the POSIX standard for operating system application programming interfaces (APIs), which is supported by most UNIX systems. MINIX was a stripped-down version of UNIX, developed in 1987 for educational uses, that inspired the commercially available, free software Linux. Since 2008, MINIX is used in controllers of most Intel microchips, while Linux is widespread in data centers and Android smartphones.
+
+
+Microcomputers
+
+The invention of large scale integration enabled the production of personal computers (initially called microcomputers) from around 1980. For around five years, the CP/M (Control Program for Microcomputers) was the most popular operating system for microcomputers. Later, IBM bought a disk operating system from Microsoft, which IBM sold as IBM PC DOS and Microsoft branded as MS-DOS (MicroSoft Disk Operating System) and was widely used on IBM PC compatible microcomputers. Later versions increased their sophistication, in part by borrowing features from UNIX.
+The first popular computer to use a graphical user interface (GUI) was Apple's Macintosh. The GUI proved much more user friendly than the text-only command-line interface of earlier operating systems. This success prompted Microsoft to add a GUI overlay to MS-DOS called Windows. Windows later was rewritten as a stand-alone operating system, Windows NT, borrowing so many features from another OS (VAX/VMS) that a large legal settlement was paid. In the 21st century, Windows continues to be popular on personal computers but has less market share of servers. UNIX operating systems, especially Linux, are the most popular on enterprise systems and servers but are also used on mobile devices and many other computer systems.
+On mobile devices, Symbian OS was dominant at first, being usurped by BlackBerry OS (introduced 2002) and iOS for iPhones (from 2007). Later on, the open-source Android operating system (introduced 2008), with a Linux kernel and a C library (Bionic) partially based on BSD code, became most popular.
+
+
+Components
+The components of an operating 
+
+[内容截取，完整内容请查阅 Wikipedia]

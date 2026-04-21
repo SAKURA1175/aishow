@@ -1,0 +1,75 @@
+# Functional programming
+
+In computer science, functional programming is a programming paradigm where programs are constructed by applying and composing functions. It is a declarative programming paradigm in which function definitions are trees of expressions that map values to other values, rather than a sequence of imperative statements which update the running state of the program.
+In functional programming, functions are treated as first-class entities, meaning that they can be bound to names (including local identifiers), passed as arguments, and returned from other functions, just as any other data type can. This allows programs to be written in a declarative and composable style, where small functions are combined in a modular manner.
+Functional programming is sometimes treated as synonymous with purely functional programming, a subset of functional programming that treats all functions as deterministic mathematical functions, or pure functions. When a pure function is called with some given arguments, it will always return the same result, and cannot be affected by any mutable state or other side effects. This is in contrast with impure procedures, common in imperative programming, which can have side effects (such as modifying the program's state or taking input from a user). Proponents of purely functional programming claim that by restricting side effects, programs can have fewer bugs, be easier to debug and test, and be more suited to formal verification.
+Functional programming has its roots in academia, evolving from the lambda calculus, a formal system of computation based only on functions. Functional programming has historically been less popular than imperative programming, but many functional languages are seeing use today in industry and education, including Common Lisp, Scheme, Clojure, Wolfram Language, Racket, Erlang, Elixir, OCaml, Haskell, and F#. Lean is a functional programming language commonly used for verifying mathematical theorems. Functional programming is also key to some languages that have found success in specific domains, like JavaScript in the Web, R in statistics, J, K and Q in financial analysis, and XQuery/XSLT for XML. Domain-specific declarative languages like SQL and Lex/Yacc use some elements of functional programming, such as not allowing mutable values. In addition, many other programming languages support programming in a functional style or have implemented features from functional programming, such as C++ (since C++11), C#, Kotlin, Perl, PHP, Python, Go, Rust, Raku, Scala, and Java (since Java 8).
+
+
+History
+The lambda calculus, developed in the 1930s by Alonzo Church, is a formal system of computation built from function application. In 1937 Alan Turing proved that the lambda calculus and Turing machines are equivalent models of computation, showing that the lambda calculus is Turing complete. Lambda calculus forms the basis of all functional programming languages. An equivalent theoretical formulation, combinatory logic, was developed by Moses Schönfinkel and Haskell Curry in the 1920s and 1930s.
+Church later developed a weaker system, the simply typed lambda calculus, which extended the lambda calculus by assigning a data type to all terms. This forms the basis for statically typed functional programming.
+The first high-level functional programming language, Lisp, was developed in the late 1950s for the IBM 700/7000 series of scientific computers by John McCarthy while at Massachusetts Institute of Technology (MIT). Lisp functions were defined using Church's lambda notation, extended with a label construct to allow recursive functions. Lisp first introduced many paradigmatic features of functional programming, though early Lisps were multi-paradigm languages, and incorporated support for numerous programming styles as new paradigms evolved. Later dialects, such as Scheme and Clojure, and offshoots such as Dylan and Julia, sought to simplify and rationalise Lisp around a cleanly functional core, while Common Lisp was designed to preserve and update the paradigmatic features of the numerous older dialects it replaced.
+Information Processing Language (IPL), 1956, is sometimes cited as the first computer-based functional programming language. It is an assembly-style language for manipulating lists of symbols. It does have a notion of generator, which amounts to a function that accepts a function as an argument, and, since it is a low-level programming language, code can be data, so IPL can be regarded as having higher-order functions. However, it relies heavily on the mutating list structure and similar imperative features.
+Kenneth E. Iverson developed APL in the early 1960s, described in his 1962 book A Programming Language (ISBN 9780471430148). APL was the primary influence on John Backus's FP. In the early 1990s, Iverson and Roger Hui created J. In the mid-1990s, Arthur Whitney, who had previously worked with Iverson, created K, which is used commercially in financial industries along with its descendant Q.
+In the mid-1960s, Peter Landin invented SECD machine, the first abstract machine for a functional programming language, described a correspondence between ALGOL 60 and the lambda calculus, and proposed the ISWIM programming language.
+John Backus presented FP in his 1977 Turing Award lecture "Can Programming Be Liberated From the von Neumann Style? A Functional Style and its Algebra of Programs". He defines functional programs as being built up in a hierarchical way by means of "combining forms" that allow an "algebra of programs"; in modern language, this means that functional programs follow the principle of compositionality. Backus's paper popularized research into functional programming, though it emphasized function-level programming rather than the lambda-calculus style now associated with functional programming.
+The 1973 language ML was created by Robin Milner at the University of Edinburgh, and David Turner developed the language SASL at the University of St Andrews. Also in Edinburgh in the 1970s, Burstall and Darlington developed the functional language NPL. NPL was based on Kleene Recursion Equations and was first introduced in their work on program transformation. Burstall, MacQueen and Sannella then incorporated the polymorphic type checking from ML to produce the language Hope. ML eventually developed into several dialects, the most common of which are now OCaml and Standard ML.
+In the 1970s, Guy L. Steele and Gerald Jay Sussman developed Scheme, as described in the Lambda Papers and the 1985 textbook Structure and Interpretation of Computer Programs. Scheme was the first dialect of lisp to use lexical scoping and to require tail-call optimization, features that encourage functional programming.
+In the 1980s, Per Martin-Löf developed intuitionistic type theory (also called constructive type theory), which associated functional programs with constructive proofs expressed as dependent types. This led to new approaches to interactive theorem proving and has influenced the development of subsequent functional programming languages.
+The lazy functional language, Miranda, developed by David Turner, initially appeared in 1985 and had a strong influence on Haskell. With Miranda being proprietary, Haskell began with a consensus in 1987 to form an open standard for functional programming research; implementation releases have been ongoing as of 1990.
+More recently it has found use in niches such as parametric CAD in the OpenSCAD language built on the CGAL framework, although its restriction on reassigning values (all values are treated as constants) has led to confusion among users who are unfamiliar with functional programming as a concept.
+Functional programming continues to be used in commercial settings.
+
+
+Concepts
+A number of concepts and paradigms are specific to functional programming, and generally foreign to imperative programming (including object-oriented programming). However, programming languages often cater to several programming paradigms, so programmers using "mostly imperative" languages may have utilized some of these concepts.
+
+
+First-class and higher-order functions
+
+Higher-order functions are functions that can either take other functions as arguments or return them as results. In calculus, an example of a higher-order function is the differential operator
+
+
+
+        d
+
+          /
+
+        d
+        x
+
+
+    {\displaystyle d/dx}
+
+, which returns the derivative of a function
+
+
+
+        f
+
+
+    {\displaystyle f}
+
+.
+Higher-order functions are closely related to first-class functions in that higher-order functions and first-class functions both allow functions as arguments and results of other functions. The distinction between the two is subtle: "higher-order" describes a mathematical concept of functions that operate on other functions, while "first-class" is a computer science term for programming language entities that have no restriction on their use (thus first-class functions can appear anywhere in the program that other first-class entities like numbers can, including as arguments to other functions and as their return values).
+Higher-order functions enable partial application or currying, a technique that applies a function to its arguments one at a time, with each application returning a new function that accepts the next argument. This lets a programmer succinctly express, for example, the successor function as the addition operator partially applied to the natural number one.
+
+
+Pure functions
+
+Pure functions (or expressions) have no side effects (memory or I/O). This means that pure functions have several useful properties, many of which can be used to optimize the code:
+
+If the result of a pure expression is not used, it can be removed without affecting other expressions.
+If a pure function is called with arguments that cause no side-effects, the result is constant with respect to that argument list (sometimes called referential transparency or idempotence), i.e., calling the pure function again with the same arguments returns the same result. (This can enable caching optimizations such as memoization.)
+If there is no data dependency between two pure expressions, their order can be reversed, or they can be performed in parallel and they cannot interfere with one another (in other terms, the evaluation of any pure expression is thread-safe).
+If the entire language does not allow side-effects, then any evaluation strategy can be used; this gives the compiler freedom to reorder or combine the evaluation of expressions in a program (for example, using deforestation).
+While most compilers for imperative programming languages detect pure functions and perform common-subexpression elimination for pure function calls, they cannot always do this for pre-compiled libraries, which generally do not expose this information, thus preventing optimizations that involve those external functions. Some compilers, such as gcc, add extra keywords for a programmer to explicitly mark external functions as pure, to enable such optimizations. Fortran 95 also lets functions be designated pure. C++11 added constexpr keyword with similar semantics.
+
+
+Recursion
+
+Iteration (looping) in functional languages is usually accomplished via recursion. Recursive functions invoke themselves, letting an operation be repeated until it reaches the base case. In general, recursion requires maintaining a stack, which consumes space in a linear amount to the depth of recursion. This could make recursion prohibitively expensive to use instead of imperative loops. However, a special form of recursion known as tail recursion can be recognized and optimized by a compiler into the same code used to implement iteration in imperative languages. Tail recursion optimization can be implemented by transforming the program into continuation passing style during compiling, among other approaches.
+The Scheme language standard requires implementations to support prope
+
+[内容截取，完整内容请查阅 Wikipedia]

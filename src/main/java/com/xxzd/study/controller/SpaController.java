@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class SpaController {
 
     // 匹配 /app/ 下所有不带后缀名的路径，转发到 /app/index.html 交给前端路由处理
-    @RequestMapping(value = { "/app", "/app/", "/app/{path:[^\\.]*}", "/app/**/{path:[^\\.]*}" })
+    @RequestMapping(value = { "/app", "/app/", "/app/{path:[^\\.]*}", "/app/{p1:[^\\.]*}/{p2:[^\\.]*}", "/app/{p1:[^\\.]*}/{p2:[^\\.]*}/{p3:[^\\.]*}" })
     public String forwardToSpa() {
         return "forward:/app/index.html";
     }

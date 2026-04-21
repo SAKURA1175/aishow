@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 import { cn } from '@/lib/utils'
 
 // Configure marked with highlight.js
@@ -16,6 +18,70 @@ marked.setOptions({
   gfm: true,
 })
 
+/** 渲染 LaTeX 数学公式：先处理块级 $$，再处理行内 $ */
+function renderMath(text) {
+  // 块级公式 $$...$$
+  text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
+    try {
+      return '<span class="math-block">' + katex.renderToString(expr.trim(), { displayMode: true, throwOnError: false }) + '</span>'
+    } catch {
+      return `<span class="math-block text-red-500 text-xs">LaTeX error: ${expr}</span>`
+    }
+  })
+  // 行内公式 $...$（排除 $$ 已处理的情况）
+  text = text.replace(/\$([^\n$]+?)\$/g, (_, expr) => {
+    try {
+      return katex.renderToString(expr.trim(), { displayMode: false, throwOnError: false })
+    } catch {
+      return `<span class="text-red-500 text-xs">LaTeX error: ${expr}</span>`
+    }
+  })
+  return text
+}
+
+/** 复制按钮组件 */
+function CopyButton({ text, className = '', label = '复制' }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // fallback
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [text])
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={cn(
+        'inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md transition-all',
+        'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+        copied && 'text-emerald-500 hover:text-emerald-500',
+        className
+      )}
+      title={copied ? '已复制' : label}
+    >
+      {copied ? (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      )}
+      {copied ? '已复制' : label}
+    </button>
+  )
+}
+
 export default function MarkdownRenderer({ content, className, streaming = false }) {
   const ref = useRef(null)
 
@@ -24,6 +90,31 @@ export default function MarkdownRenderer({ content, className, streaming = false
       // Re-run highlight on any un-highlighted code blocks
       ref.current.querySelectorAll('pre code:not(.hljs)').forEach((el) => {
         hljs.highlightElement(el)
+      })
+      // Inject copy buttons into code blocks
+      ref.current.querySelectorAll('pre').forEach((pre) => {
+        if (pre.querySelector('.code-copy-btn')) return // already has button
+        const code = pre.querySelector('code')
+        if (!code) return
+        const btn = document.createElement('button')
+        btn.className = 'code-copy-btn'
+        btn.textContent = '复制'
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(code.textContent || '')
+          } catch {
+            const textarea = document.createElement('textarea')
+            textarea.value = code.textContent || ''
+            document.body.appendChild(textarea)
+            textarea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textarea)
+          }
+          btn.textContent = '已复制 ✓'
+          setTimeout(() => { btn.textContent = '复制' }, 2000)
+        })
+        pre.style.position = 'relative'
+        pre.appendChild(btn)
       })
     }
   }, [content])
@@ -50,7 +141,15 @@ export default function MarkdownRenderer({ content, className, streaming = false
     }
   }
 
-  const html = marked.parse(mainContent)
+  // 先渲染数学公式（在 marked 之前），再 markdown parse
+  const mathProcessed = renderMath(mainContent)
+  const html = marked.parse(mathProcessed)
+
+  // 思考过程也渲染为 Markdown（更易读）
+  const thinkHtml = thinkContent ? marked.parse(renderMath(thinkContent)) : ''
+
+  // 提取纯文本用于复制
+  const plainText = (mainContent || '').replace(/<[^>]*>/g, '').trim()
 
   return (
     <div className="flex flex-col w-full">
@@ -74,23 +173,32 @@ export default function MarkdownRenderer({ content, className, streaming = false
               )}
             </span>
           </summary>
-          <div className="mt-2 text-[13px] text-muted-foreground/70 border-l-2 border-primary/30 pl-3 py-1 mb-2 whitespace-pre-wrap break-all overflow-hidden leading-relaxed italic bg-muted/10 rounded-r-md">
-            {thinkContent}
-          </div>
+          <div
+            className="mt-2 text-[13px] text-muted-foreground/70 border-l-2 border-primary/30 pl-3 py-1 mb-2 break-all overflow-hidden leading-relaxed italic bg-muted/10 rounded-r-md prose-sm max-w-none [&_p]:my-1 [&_li]:my-0.5 [&_pre]:text-[12px]"
+            dangerouslySetInnerHTML={{ __html: thinkHtml }}
+          />
         </details>
       )}
       
       {mainContent && (
-        <div
-          ref={ref}
-          className={cn(
-            'markdown-body prose-sm max-w-none',
-            streaming && !thinkContent && 'after:content-["▋"] after:animate-pulse after:text-primary after:ml-0.5',
-            className
+        <>
+          <div
+            ref={ref}
+            className={cn(
+              'markdown-body prose-sm max-w-none',
+              streaming && !thinkContent && 'after:content-["▋"] after:animate-pulse after:text-primary after:ml-0.5',
+              className
+            )}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+          {!streaming && plainText.length > 20 && (
+            <div className="flex justify-end mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <CopyButton text={content?.replace(/<think>[\s\S]*?<\/think>/g, '').trim() || ''} label="复制全文" />
+            </div>
           )}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        </>
       )}
     </div>
   )
 }
+

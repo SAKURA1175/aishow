@@ -10,12 +10,14 @@ RUN npm run build
 FROM maven:3.9.6-eclipse-temurin-17 AS backend-builder
 WORKDIR /backend
 COPY pom.xml ./
+# Pre-download dependencies (cached unless pom.xml changes)
+RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src ./src
 # Copy built frontend into static resources
 COPY --from=frontend-builder /frontend/dist ./src/main/resources/static/app
 # Package the application
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -o
 
 # Stage 3: Run application
 FROM eclipse-temurin:17-jre

@@ -1,0 +1,73 @@
+# Object-oriented programming
+
+Object-oriented programming (OOP) is a programming paradigm based on objects – software entities that encapsulate data and function(s). An OOP computer program consists of objects that interact with one another. An OOP language is one that provides object-oriented programming features, but as the set of features that contribute to OOP is contested, classifying a language as OOP – and the degree to which it supports OOP – is debatable. As paradigms are not mutually exclusive, a language can be multi-paradigm (i.e. categorized as more than only OOP).
+Notable languages with OOP support include Ada, ActionScript, C++, Common Lisp, C#, Dart, Eiffel, Fortran 2003, Haxe, Java, JavaScript, Kotlin, Logo, MATLAB, Objective-C, Object Pascal, Perl, PHP, Python, R, Raku, Ruby, Scala, SIMSCRIPT, Simula, Smalltalk, Swift, Vala and Visual Basic (.NET).
+
+
+History
+The idea of "objects" in programming began with the artificial intelligence group at Massachusetts Institute of Technology (MIT) in the late 1950s and early 1960s. Here, "object" referred to LISP atoms with identified properties (attributes).
+Another early example was Sketchpad created by Ivan Sutherland at MIT in 1960–1961. In the glossary of his technical report, Sutherland defined terms like "object" and "instance" (with the class concept covered by "master" or "definition"), albeit specialized to graphical interaction. Later, in 1968, AED-0, MIT's version of the ALGOL programming language, connected data structures ("plexes") and procedures, prefiguring what were later termed "messages", "methods", and "member functions".
+Topics such as data abstraction and modular programming were common points of discussion at this time.
+Meanwhile, in Norway, Simula was developed during the years 1961–1967. Simula introduced essential object-oriented ideas, such as classes, inheritance, and dynamic binding.
+Simula was used mainly by researchers involved with physical modelling, like the movement of ships and their content through cargo ports. Simula is generally accepted as being the first language with the primary features and framework of an object-oriented language.
+
+Influenced by both MIT and Simula, Alan Kay began developing his own ideas in November 1966. He would go on to create Smalltalk, an influential OOP language. By 1967, Kay was already using the term "object-oriented programming" in conversation. Although sometimes called the "father" of OOP, Kay has said his ideas differ from how OOP is commonly understood, and has implied that the computer science establishment did not adopt his notion.
+A 1976 MIT memo co-authored by Barbara Liskov lists Simula 67, CLU, and Alphard as object-oriented languages, but does not mention Smalltalk.
+In the 1970s, the first version of the Smalltalk programming language was developed at Xerox PARC by Alan Kay, Dan Ingalls and Adele Goldberg. Smalltalk-72 was notable for use of objects at the language level and its graphical development environment. Smalltalk was a fully dynamic system, allowing users to create and modify classes as they worked. Much of the theory of OOP was developed in the context of Smalltalk, for example multiple inheritance.
+In the late 1970s and 1980s, OOP rose to prominence. The Flavors object-oriented Lisp was developed starting 1979, introducing multiple inheritance and mixins. In August 1981, Byte Magazine highlighted Smalltalk and OOP, introducing these ideas to a wide audience. LOOPS, the object system for Interlisp-D, was influenced by Smalltalk and Flavors, and a paper about it was published in 1982. In 1986, the first Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA) was attended by 1,000 people. This conference marked the start of efforts to consolidate Lisp object systems, eventually resulting in the Common Lisp Object System. In the 1980s, there were a few attempts to design processor architectures that included hardware support for objects in memory, but these were not successful. Examples include the Intel iAPX 432 and the Linn Smart Rekursiv.
+In the mid-1980s, new object-oriented languages like Objective-C, C++, and the Eiffel language emerged. Objective-C was developed by Brad Cox, who had used Smalltalk at ITT Inc. Bjarne Stroustrup created C++ based on his experience using Simula for his PhD thesis. Bertrand Meyer produced the first design of the Eiffel language in 1985, which focused on software quality using a design by contract approach.
+In the 1990s, OOP became the main way of programming, especially as more languages supported it. These included Visual FoxPro 3.0, C++, and Delphi. OOP became even more popular with the rise of graphical user interfaces, which used objects for buttons, menus and other elements. One well-known example is Apple's Cocoa framework, used on macOS and written in Objective-C. OOP toolkits also enhanced the popularity of event-driven programming.
+At ETH Zürich, Niklaus Wirth and his colleagues created new approaches to OOP. Modula-2 (1978) and Oberon (1987), included a distinctive approach to object orientation, classes, and type checking across module boundaries. Inheritance is not obvious in Wirth's design since his nomenclature looks in the opposite direction: It is called type extension and the viewpoint is from the parent down to the inheritor.
+Many programming languages that were initially developed before OOP was popular have been augmented with object-oriented features, including Ada, BASIC, Fortran, Pascal, and COBOL.
+
+
+Features
+
+The OOP features provided by languages varies. Below are some common features of OOP languages. Comparing OOP with other styles, like relational programming, is difficult because there isn't a clear, agreed-upon definition of OOP.
+
+
+Encapsulation and information hiding
+Information hiding and encapsulation can refer to several related concepts:
+
+Cohesion, keeping related fields and methods together. A field (a.k.a. attribute or property) contains information (a.k.a. state) as a variable. A method (a.k.a. function or action) defines behavior via logic code.
+Decoupling, organizing code so that only certain parts of the data are used by related functions. Decoupling makes it easier to change how an object works on the inside without affecting other parts of the codebase, such as in code refactoring. Objects act as a boundary between their internal workings and external, consuming code.
+Data hiding, keeping the internal details of an object hidden from outside code. Consuming code can only interact with an object via its public members, due to the language providing access modifiers that control visibility.
+Some programming languages, like Java, provide information hiding via visibility key words (private and public). Some languages like Python don't provide a visibility feature, but developers might follow a convention such as starting a private member name with an underscore. Intermediate levels of access also exist, such as Java's protected keyword, (which allows access from the same class and its subclasses, but not objects of a different class), and the internal keyword in C#, Swift, and Kotlin, which restricts access to files within the same module.
+Supporters of information hiding and data abstraction say it makes code easier to reuse and intuitively represents real-world situations. However, others argue that OOP does not enhance readability or modularity. Eric S. Raymond has written that OOP languages tend to encourage thickly layered programs that destroy transparency. Raymond compares this unfavourably to the approach taken with Unix and the C language.
+SOLID includes the open/closed principle, which says that classes and functions should be "open for extension, but closed for modification". Luca Cardelli has stated that OOP languages have "extremely poor modularity properties with respect to class extension and modification", and tend to be extremely complex. The latter point is reiterated by Joe Armstrong, the principal inventor of Erlang, who is quoted as saying:
+
+The problem with object-oriented languages is they've got all this implicit environment that they carry around with them. You wanted a banana but what you got was a gorilla holding the banana and the entire jungle.
+Leo Brodie says that information hiding can lead to duplicate code, which goes against the don't repeat yourself rule of software development.
+
+
+Inheritance
+Inheritance can be supported via the class or the prototype, which have differences but use similar terms like object and instance.
+
+
+Class-based
+In class-based programming, the most common type of OOP, an object is an instance of a class. The class defines the data (variables) and methods (logic). An object is created via the constructor. Every instance of the class has the same set of variables and methods. Elements may include:
+
+Class variable – belongs to the class itself; all objects of the class share one copy
+Instance variable – belongs to an object; every object has its own version of these variables
+Member variable – refers to both the class and instance variables of a class
+Class method – can only use class variables
+Instance method – belongs to an object; can use both instance and class variables
+Classes may inherit from other classes, creating a hierarchy of classes: a case of a subclass inheriting from a super-class. For example, an Employee class might inherit from a Person class which endows the Employee object with the variables from Person. The subclass may add variables and methods that do not affect the super-class. Most languages also allow the subclass to override super-class methods. Some languages support multiple inheritance, where a class can inherit from more than one class, and other languages similarly support mixins or traits. For example, a mixin called UnicodeConversionMixin might add a method unicode_to_ascii() to both a FileReader and a WebPageScraper class.
+An abstract class cannot be directly instantiated as an object. It is only used as a super-class.
+Other classes are utility classes which contain only class variables and methods and are not meant to be instantiated or subclassed.
+
+
+Prototype-based
+Instead of providing a class concept, in prototype-based programming, an object is linked to another object, called its prototype or parent. In Self, an object may have multiple or no parents, but in the most popular prototype-based language, JavaScript, an object has exactly one prototype link, up to the base object whose prototype is null.
+A prototype acts as a model for new objects. For example, if you have an object fruit, you can make two objects apple and orange that share traits of the fruit prototype. Prototype-based languages also allow objects to have their own unique properties, so the apple object might have an attribute sugar_content, while the orange or fruit objects do not.
+
+
+No inheritance
+In all OOP languages, via object composition, an object can contain other objects. For example, an Employee object might contain an Address object, along with other information like name and position. Composition is a "has-a" relationships, like "an employee has an address". Some languages, like Go, don't support inheritance. Instead, they encourage "composition over inheritance", where objects are built using smaller parts instead of parent-child relationships. For example, instead of inheriting from class Person, the Employee class could simply contain a Person object. This lets the Employee class control how much of Person it exposes to other parts of the program. Delegation is another language feature that can be used as an alternative to inheritance.
+Programmers have different opinions on inheritance. Bjarne Stroustrup, author of C++, has stated that it is possible to do OOP without inheritance. Rob Pike has criticized inheritance for creating complex hierarchies instead of simpler solutions.
+
+
+Inheritance and behavioral subtyping
+People often think that if one class inherits from another
+
+[内容截取，完整内容请查阅 Wikipedia]

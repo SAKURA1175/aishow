@@ -1,0 +1,92 @@
+# Kubernetes
+
+Kubernetes (), also known as K8s, is an open-source container orchestration system for automating software deployment, scaling, and management. Originally designed by Google, the project is now maintained by a worldwide community of contributors, and the trademark is held by the Cloud Native Computing Foundation.
+The name Kubernetes comes from the Ancient Greek term κυβερνήτης, kubernḗtēs (helmsman, pilot), which is also the origin of the words cybernetics and (through Latin) governor. "Kubernetes" is often abbreviated with the numerical contraction "K8s", meaning "the letter K, followed by 8 letters, followed by s".
+Kubernetes assembles one or more computers, either virtual machines or bare metal, into a cluster which can run workloads in containers. It works with various container runtimes, such as containerd and CRI-O. Its suitability for running and managing workloads of all sizes and styles has led to its widespread adoption in clouds and data centers. There are multiple distributions of this platform—from independent software vendors (ISVs) as well as hosted-on-cloud offerings from all the major public cloud vendors.
+The software consists of a control plane and nodes on which the actual applications run. It includes tools like kubeadm and kubectl which can be used to interact with its REST-based API.
+
+
+History
+
+Kubernetes was announced by Google on June 6, 2014. The project was conceived and created by Google employees Joe Beda, Brendan Burns, and Craig McLuckie. Others at Google soon joined to help build the project including Ville Aikas, Dawn Chen, Brian Grant, Tim Hockin, and Daniel Smith. Other companies such as Red Hat and CoreOS joined the effort soon after, with notable contributors such as Clayton Coleman and Kelsey Hightower.
+The design and development of Kubernetes was inspired by Google's Borg cluster manager and based on Promise Theory. Many of its top contributors had previously worked on Borg; they codenamed Kubernetes "Project 7" after the Star Trek ex-Borg character Seven of Nine and gave its logo a seven-spoked ship's wheel (designed by Tim Hockin). Unlike Borg, which was written in C++, Kubernetes is written in the Go language.
+Kubernetes was announced in June, 2014 and version 1.0 was released on July 21, 2015. Google worked with the Linux Foundation to form the Cloud Native Computing Foundation (CNCF) and offered Kubernetes as the seed technology.
+Google was already offering a managed Kubernetes service, GKE, and Red Hat was supporting Kubernetes as part of OpenShift since the inception of the Kubernetes project in 2014. In 2017, the principal competitors rallied around Kubernetes and announced adding native support for it:
+
+VMware (proponent of Pivotal Cloud Foundry) in August,
+Mesosphere, Inc. (proponent of Marathon and Mesos) in September,
+Docker, Inc. (proponent of Docker) in October,
+Microsoft Azure also in October,
+AWS announced support for Kubernetes via the Elastic Kubernetes Service (EKS) in November.
+Cisco Elastic Kubernetes Service (EKS) in November.
+On March 6, 2018, Kubernetes Project reached ninth place in the list of GitHub projects by the number of commits, and second place in authors and issues, after the Linux kernel.
+Until version 1.18, Kubernetes followed an N-2 support policy, meaning that the three most recent minor versions receive security updates and bug fixes. Starting with version 1.19, Kubernetes follows an N-3 support policy.
+
+
+Concepts
+
+Kubernetes defines a set of building blocks ("primitives") that collectively provide mechanisms that deploy, maintain, and scale applications based on CPU, memory or custom metrics. Kubernetes is loosely coupled and extensible to meet the needs of different workloads. The internal components as well as extensions and containers that run on Kubernetes rely on the Kubernetes API.
+The platform exerts its control over compute and storage resources by defining resources as objects, which can then be managed as such.
+Kubernetes follows the primary/replica architecture. The components of Kubernetes can be divided into those that manage an individual node and those that are part of the control plane.
+
+
+Control plane
+The Kubernetes master node handles the Kubernetes control plane of the cluster, managing its workload and directing communication across the system. The Kubernetes control plane consists of various components such as TLS encryption, RBAC, and a strong authentication method, network separation, each its own process, that can run both on a single master node or on multiple masters supporting high-availability clusters. The various components of the Kubernetes control plane are as follows.
+
+
+Etcd
+Etcd is a persistent, lightweight, distributed, key-value data store (originally developed as part of CoreOS). It reliably stores the configuration data of the cluster, representing the overall state of the cluster at any given point of time. Etcd favors consistency over availability in the event of a network partition (see CAP theorem). The consistency is crucial for correctly scheduling and operating services.
+
+
+API server
+The API server serves the Kubernetes API using JSON over HTTP, which provides both the internal and external interface to Kubernetes. The API server processes, validates REST requests, and updates the state of the API objects in etcd, thereby allowing clients to configure workloads and containers across worker nodes. The API server uses etcd's watch API to monitor the cluster, roll out critical configuration changes, or restore any divergences of the state of the cluster back to the desired state as declared in etcd.
+As an example, a human operator may specify that three instances of a particular "pod" (see below) need to be running, and etcd stores this fact. If the Deployment controller finds that only two instances are running (conflicting with the etcd declaration), it schedules the creation of an additional instance of that pod.
+
+
+Scheduler
+The scheduler is an extensible component that selects the node that an unscheduled pod (the basic unit of workloads to be scheduled) runs on, based on resource availability and other constraints. The scheduler tracks resource allocation on each node to ensure that workload is not scheduled in excess of available resources. For this purpose, the scheduler must know the resource requirements, resource availability, and other user-provided constraints or policy directives such as quality-of-service, affinity/anti-affinity requirements, and data locality. The scheduler's role is to match resource "supply" to workload "demand".
+Kubernetes allows running multiple schedulers within a single cluster. As such, scheduler plug-ins may be developed and installed as in-process extensions to the native vanilla scheduler by running it as a separate scheduler, as long as they conform to the Kubernetes scheduling framework. This allows cluster administrators to extend or modify the behavior of the default Kubernetes scheduler according to their needs.
+
+
+Controllers
+A controller is a reconciliation loop that drives the actual cluster state toward the desired state, communicating with the API server to create, update, and delete the resources it manages (e.g., pods or service endpoints).
+An example controller is a ReplicaSet controller, which handles replication and scaling by running a specified number of copies of a pod across the cluster. The controller also handles creating replacement pods if the underlying node fails. Other controllers that are part of the core Kubernetes system include a DaemonSet controller for running exactly one pod on every machine (or some subset of machines), and a Job controller for running pods that run to completion (e.g. as part of a batch job). Labels selectors often form part of the controller's definition that specify the set of pods that a controller manages.
+The controller manager is a single process that manages several core Kubernetes controllers (including the examples described above), is distributed as part of the standard Kubernetes installation and responding to the loss of nodes.
+Custom controllers may also be installed in the cluster, further allowing the behavior and API of Kubernetes to be extended when used in conjunction with custom resources (see custom resources, controllers and operators below).
+
+
+Nodes
+A node, also known as a worker or a minion, is a machine where containers (workloads) are deployed. Every node in the cluster must run a container runtime, as well as the below-mentioned components, for communication with the primary network configuration of these containers.
+
+
+kubelet
+kubelet is responsible for the running state of each node, ensuring that all containers on the node are healthy. It takes care of starting, stopping, and maintaining application containers organized into pods as directed by the control plane. kubelet monitors the state of a pod, and if not in the desired state, the pod re-deploys to the same node. Node status is relayed every few seconds via heartbeat messages to the API server. Once the control plane detects a node failure, a higher-level controller is expected to observe this state change and launch pods on another healthy node.
+
+
+Container runtime
+A container runtime is responsible for the lifecycle of containers, including launching, reconciling and killing of containers. kubelet interacts with container runtimes via the Container Runtime Interface (CRI), which decouples the maintenance of core Kubernetes from the actual CRI implementation.
+Originally, kubelet interfaced exclusively with the Docker runtime through a "dockershim". However, from November 2020 up to April 2022, Kubernetes has deprecated the shim in favor of directly interfacing with the container through containerd, or replacing Docker with a runtime that is compliant with the Container Runtime Interface (CRI). With the release of v1.24 in May 2022, the "dockershim" has been removed entirely.
+Examples of popular container runtimes that are compatible with kubelet include containerd (initially supported via Docker) and CRI-O.
+
+
+kube-proxy
+kube-proxy is an implementation of a network proxy and a load balancer, and it supports the service abstraction along with the other networking operations. It is responsible for routing traffic to the appropriate container based on IP and port number of the incoming request.
+
+
+Namespaces
+In Kubernetes, namespaces are utilized to segregate the resources it handles into distinct and non-intersecting collections. They are intended for use in environments with many users spread across multiple teams, or projects, or even separating environments like development, test, and production.
+
+
+Pods
+The basic scheduling unit in Kubernetes is a pod, which consists of one or more containers that are guaranteed to be co-located on the same node. Each pod in Kubernetes is assigned a unique IP address within the cluster, allowing applications to use ports without the risk of conflict. Within the pod, all containers can reference each other.
+A container resides inside a pod. The container is the lowest level of a micro-service, which holds the running application, libraries, and their dependencies.
+
+
+Workloads
+Kubernetes supports several abstractions of workloads that are at a higher level over simple pods. This allows users to declaratively define and manage these high-level abstractions, instead of having to manage individual pods by themselves. Several of these abstractions, supported by a standard installation of Kubernetes, are described below.
+
+
+ReplicaSets, ReplicationControllers and Deployments
+A ReplicaSet's purpose is to maintain a stable set of replica pods running at any given time. As such, it is often used to guarantee the availability of a specified number of identical Pods. The ReplicaSet can also be said to be a grouping mechanism that lets Kubernetes maintain the number of instances that have been declared for a given pod. The definition of a ReplicaSet uses a s
+
+[内容截取，完整内容请查阅 Wikipedia]

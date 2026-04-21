@@ -36,6 +36,17 @@ public class SystemPromptProvider {
         return getPromptByRole("student");
     }
 
+    /** 覆盖缓存（管理员热编辑后调用） */
+    public void setPrompt(String role, String content) {
+        String key = (role == null || role.isBlank()) ? "student" : role.toLowerCase();
+        cache.put(key, content);
+    }
+
+    /** 直接读取当前生效的 prompt（可能是覆盖后的版本） */
+    public String getPromptRaw(String role) {
+        return getPromptByRole(role);
+    }
+
     private String load(String filename) {
         Resource resource = resourceLoader.getResource("classpath:" + filename);
         if (!resource.exists()) {

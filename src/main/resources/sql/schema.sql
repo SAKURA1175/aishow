@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `document_chunk` (
 CREATE TABLE IF NOT EXISTS `document_embedding` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
   `chunk_id` BIGINT NOT NULL COMMENT '关联的文档切片ID',
-  `vector` BLOB NOT NULL COMMENT '向量数据（可存为二进制或JSON）',
+  `vector_json` LONGTEXT NOT NULL COMMENT '向量 JSON 数据',
   CONSTRAINT `fk_embedding_chunk` FOREIGN KEY (`chunk_id`) REFERENCES `document_chunk` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文档向量表';
 

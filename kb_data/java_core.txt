@@ -1,0 +1,109 @@
+# Java 核心知识体系
+
+## 一、Java 基础语法
+
+### 数据类型
+Java 有 8 种基本数据类型：byte(1字节)、short(2字节)、int(4字节)、long(8字节)、float(4字节)、double(8字节)、char(2字节)、boolean。引用类型包括类(class)、接口(interface)、数组(array)。
+
+### 面向对象三大特性
+封装(Encapsulation)：将数据和行为封装在类中，通过访问修饰符(public/private/protected/default)控制访问权限。
+继承(Inheritance)：子类通过 extends 关键字继承父类，Java 只支持单继承但可多层继承。
+多态(Polymorphism)：同一方法调用在不同对象上有不同表现，通过方法重写(Override)和向上转型实现。
+
+### 接口与抽象类
+接口(interface)中方法默认 public abstract，Java 8 后支持 default 方法和 static 方法。抽象类(abstract class)可以包含具体实现，不能被实例化，用于定义模板方法模式。
+
+## 二、Java 集合框架
+
+### List
+ArrayList：基于动态数组，随机访问 O(1)，插入/删除 O(n)，非线程安全。初始容量16，扩容因子1.5倍。
+LinkedList：基于双向链表，插入/删除 O(1)，随机访问 O(n)，实现了 Deque 接口。
+Vector：线程安全的 ArrayList，性能较差，不推荐使用。
+
+### Map
+HashMap：基于哈希表，JDK8 后当链表长度 > 8 且数组长度 >= 64 时转为红黑树，时间复杂度 O(1) 平均。加载因子 0.75，默认容量 16，扩容时容量翻倍。
+LinkedHashMap：维护双向链表保持插入顺序，可重写 removeEldestEntry 实现 LRU 缓存。
+TreeMap：基于红黑树，按键自然顺序或自定义 Comparator 排序，时间复杂度 O(log n)。
+ConcurrentHashMap：JDK8 采用 CAS + synchronized，对桶头节点加锁，线程安全且高性能，彻底弃用分段锁。
+
+### Set
+HashSet：底层基于 HashMap，value 为固定 PRESENT 对象，不允许重复元素，无序。
+LinkedHashSet：保持插入顺序，底层 LinkedHashMap。
+TreeSet：基于 TreeMap，元素有序，支持范围查询 headSet/tailSet/subSet。
+
+## 三、Java 并发编程
+
+### 线程基础
+创建线程的方式：继承 Thread 类、实现 Runnable 接口、实现 Callable 接口（有返回值，配合 Future/FutureTask）、线程池 ExecutorService。
+线程状态：NEW（新建）、RUNNABLE（运行）、BLOCKED（阻塞在 synchronized）、WAITING（等待 wait/join/park）、TIMED_WAITING（限时等待）、TERMINATED（终止）。
+
+### synchronized 关键字
+修饰实例方法：锁对象是当前实例 this。修饰静态方法：锁对象是 Class 对象。修饰代码块：锁对象是括号中指定的对象。底层通过 monitorenter/monitorexit 字节码指令实现。JDK6 之后引入偏向锁、轻量级锁、自旋锁优化。
+
+### volatile 关键字
+保证可见性：每次读取都从主内存读，写入后立即刷新到主内存，通过 MESI 缓存一致性协议。禁止指令重排序：通过插入内存屏障（StoreStore、LoadLoad 等）实现。不保证原子性：i++ 等复合操作不是原子操作，需用 AtomicInteger 等。
+
+### JUC 并发工具
+ReentrantLock：可重入锁，支持公平锁/非公平锁，有 tryLock 超时机制，lockInterruptibly 可中断，Condition 可替代 wait/notify。
+CountDownLatch：一次性屏障，await() 等待计数归零，countDown() 减少计数，不可重用。
+CyclicBarrier：循环屏障，所有线程都调用 await() 后同时放行，可重用，可带 Runnable 回调。
+Semaphore：信号量，acquire() 获取许可，release() 释放许可，控制并发线程数量，用于流量控制。
+ThreadPoolExecutor：核心参数 corePoolSize（核心线程数）、maximumPoolSize（最大线程数）、keepAliveTime（空闲线程存活时间）、workQueue（任务队列：ArrayBlockingQueue/LinkedBlockingQueue/SynchronousQueue）、handler（拒绝策略：AbortPolicy/CallerRunsPolicy/DiscardPolicy/DiscardOldestPolicy）。
+
+## 四、JVM 原理
+
+### 内存结构（JDK8）
+堆(Heap)：存放对象实例，垃圾回收主要区域，分 Eden（8份）、Survivor S0（1份）、S1（1份）、Old 区。通过 -Xmx/-Xms 设置。
+方法区/元空间(Metaspace)：存类信息、常量、静态变量，JDK8 后移到本地内存，不再受 JVM 堆大小限制。
+虚拟机栈：存放栈帧，每个方法调用对应一个栈帧，包含局部变量表、操作数栈、动态链接、方法返回地址。
+程序计数器：记录当前线程执行的字节码行号，线程私有，唯一不会 OOM 的区域。
+
+### 垃圾回收
+引用类型：强引用（不回收）> 软引用 SoftReference（内存不足时回收，适合缓存）> 弱引用 WeakReference（下次 GC 回收，ThreadLocal 使用）> 虚引用 PhantomReference（跟踪对象回收，不影响生命周期）。
+垃圾回收算法：标记-清除（产生碎片）、标记-整理（适合老年代）、复制算法（新生代 Eden→Survivor）、分代回收（新生代 Minor GC、老年代 Major/Full GC）。
+常见 GC：Serial GC（单线程）、Parallel GC（多线程）、CMS GC（并发标记清除，低停顿）、G1 GC（JDK9 默认，Region 分区，可预测停顿）、ZGC（JDK15 稳定，停顿 < 1ms）。
+
+### 类加载
+类加载过程：加载（.class 文件读入内存）→ 验证（格式/语义检查）→ 准备（静态变量赋默认值）→ 解析（符号引用→直接引用）→ 初始化（执行 \<clinit\>，赋静态初始值）。
+类加载器：Bootstrap ClassLoader（加载 rt.jar 核心库）→ Extension ClassLoader（加载 ext 目录）→ Application ClassLoader（加载 classpath）→ 自定义 ClassLoader。
+双亲委派模型：优先委托父类加载器加载，防止类重复加载和核心类被篡改，破坏双亲委派如 JNDI、Tomcat、OSGi。
+
+## 五、Java 8+ 新特性
+
+### Lambda 表达式
+函数式接口（@FunctionalInterface）只有一个抽象方法，如 Runnable、Comparator、Function、Predicate、Consumer、Supplier。Lambda 是函数式接口的匿名实现，减少样板代码。
+
+### Stream API
+惰性求值：中间操作(filter/map/flatMap/sorted/distinct/limit/peek)不立即执行，终止操作(collect/count/reduce/forEach/findFirst/anyMatch)触发计算。
+并行流 parallelStream：利用 ForkJoinPool，适合 CPU 密集型无状态操作，注意线程安全。
+
+### Optional
+解决空指针异常：Optional.of(value)（不允许null）、Optional.ofNullable(value)（允许null）、Optional.empty()。常用方法：isPresent()、get()、orElse()、orElseGet()、map()、filter()、ifPresent()。
+
+### CompletableFuture
+异步编程，链式组合：supplyAsync、thenApply、thenAccept、thenCompose、thenCombine、allOf、anyOf、exceptionally、handle。
+
+## 六、Spring 生态
+
+### Spring IoC 容器
+控制反转：对象的创建和依赖管理交给 Spring 容器。Bean 生命周期：实例化 → 属性填充 → BeanNameAware/BeanFactoryAware 回调 → BeanPostProcessor.postProcessBeforeInitialization → @PostConstruct/InitializingBean.afterPropertiesSet/init-method → BeanPostProcessor.postProcessAfterInitialization → 使用 → @PreDestroy/DisposableBean.destroy/destroy-method。
+
+### Spring AOP
+面向切面编程：切点(Pointcut)指定拦截位置，通知(Advice)定义增强逻辑，切面(Aspect)=切点+通知，织入(Weaving)将切面应用到目标。JDK 动态代理（目标类实现接口）、CGLIB（无接口，字节码子类化）。@Around 可控制原方法执行：ProceedingJoinPoint.proceed()。
+
+### Spring Boot 自动装配
+@SpringBootApplication = @SpringBootConfiguration + @EnableAutoConfiguration + @ComponentScan。EnableAutoConfiguration 读取各 jar 包 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports（旧版 spring.factories），条件注解 @ConditionalOnClass/@ConditionalOnMissingBean 控制 Bean 是否创建。
+
+### MyBatis
+ORM 框架，通过 Mapper 接口 + XML/注解映射 SQL。#{}预编译防 SQL 注入，${}字符串替换有注入风险。动态 SQL：\<if\>、\<choose\>、\<foreach\>、\<where\>、\<set\>、\<trim\>。一级缓存(SqlSession 级)、二级缓存(Mapper 级，需配置)。
+
+## 七、数据库与事务
+
+### 事务特性 ACID
+原子性(Atomicity)：事务要么全部成功，要么全部失败。一致性(Consistency)：事务前后数据满足完整性约束。隔离性(Isolation)：并发事务互不影响。持久性(Durability)：提交后数据永久保存。
+
+### Spring 事务传播行为
+REQUIRED（默认，加入或创建）、SUPPORTS（加入或非事务）、MANDATORY（必须在事务中）、REQUIRES_NEW（总是新建）、NOT_SUPPORTED（非事务执行）、NEVER（不能在事务中）、NESTED（嵌套事务，子事务回滚不影响父事务，父事务回滚影响子事务）。
+
+### 分布式事务
+2PC（两阶段提交）：协调者+参与者，存在单点故障和阻塞问题。SAGA 模式：长事务拆分成本地事务序列，通过补偿操作回滚。TCC（Try-Confirm-Cancel）：业务层面的两阶段提交。消息最终一致性：可靠消息队列保证最终一致。

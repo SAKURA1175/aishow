@@ -1,0 +1,64 @@
+# Graph theory
+
+In mathematics and computer science, graph theory is the study of graphs, which are mathematical structures used to model pairwise relations between objects. A graph in this context is made up of vertices (also called nodes or points) which are connected by edges (also called arcs, links, or lines). A distinction is made between undirected graphs, where edges link two vertices symmetrically, and directed graphs, where edges link two vertices asymmetrically. Graphs are one of the principal objects of study in discrete mathematics.
+
+
+Definition and etymology
+
+Graph theory is a branch of mathematics that studies graphs, a mathematical structure for modelling pairwise relations between objects. The term "graph" was introduced by James Joseph Sylvester in a paper published in 1878 in Nature, where he drew an analogy between "quantic invariants" and "co-variants" of algebra and molecular diagrams.
+The definition of a graph can vary, but one can understand that a graph is a structure that contains the vertices (also called nodes or points) and edges (also called arcs, links, or lines). Two vertices of an edge are called the endpoints. Occasionally, a graph is called an undirected graph, to distinguish it from a directed graph. A directed graph is a graph where each edge has an assignment direction known as orientation, designated with an arrow. A mixed graph can have edges that may be directed, and some may be undirected. A graph can also be called a simple graph, to distinguish it from a multigraph. A multigraph allows many edges to have the same pair of endpoints, and it also allows an edge connect a vertex to itself, known as a loop. A graph can have its edges assigned a number, which is known as the weight. Such a graph is called a weight graph.
+
+
+History
+
+In 1736, Leonhard Euler published a paper titled Solutio Problematis ad Geometriam Situs Pertinentis on the Seven Bridges of Königsberg, which is regarded as the first paper in the history of graph theory. Euler's paper and Alexandre-Théophile Vandermonde's 1771 Remarques sur les Problèmes de Situation paper on the knight's tour carried on with the analysis situs, initiated by Gottfried Wilhelm Leibniz. Euler's characteristic relating the number of edges, vertices, and faces of a convex polyhedron was studied and generalized by Augustin-Louis Cauchy and Simon Antoine Jean L'Huilier, and represents the beginning of the branch of mathematics known as topology.
+More than one century after Euler's paper on the bridges of Königsberg, and while Johann Benedict Listing was introducing the concept of topology, Arthur Cayley was led by an interest in particular analytical forms arising from differential calculus to study a particular class of graphs, the trees. This study had many implications for theoretical chemistry. The techniques he used mainly concern the enumeration of graphs with particular properties. Enumerative graph theory then arose from the results of Cayley and the fundamental results published by Pólya between 1935 and 1937. These were generalized by Nicolaas Govert de Bruijn in 1959. Cayley linked his results on trees with contemporary studies of chemical composition. The fusion of ideas from mathematics with those from chemistry began what has become part of the standard terminology of graph theory.
+The autonomous development of topology from 1860 to 1930 fertilized graph theory back through the works of Camille Jordan, Kazimierz Kuratowski, and Hassler Whitney. Another important factor in the common development of graph theory and topology came from the use of the techniques of modern algebra. The first example of such a use comes from the work of the physicist Gustav Kirchhoff, who published in 1845 his Kirchhoff's circuit laws for calculating the voltage and current in electric circuits.
+The first textbook on graph theory was written by Dénes Kőnig, and published in 1936. Another book by Frank Harary, published in 1969, was "considered the world over to be the definitive textbook on the subject", and enabled mathematicians, chemists, electrical engineers and social scientists to talk to each other. Harary donated all of the royalties to fund the Pólya Prize.
+One of the most famous problems in graph theory is the four color problem: Is it true that any map drawn in the plane may have its regions colored with four colors, in such a way that any two regions having a common border have different colors? This problem was first posed by Francis Guthrie in 1852, and its first written record is in a letter of Augustus De Morgan addressed to William Rowan Hamilton the same year. Many incorrect proofs have been proposed, including those by Augustin Cayley, Alfred Kempe, and others. The study and the generalization of this problem by Peter Tait, Percy John Heawood, Frank P. Ramsey and Hadwiger led to the study of the colorings of the graphs embedded on surfaces with arbitrary genus. Tait's reformulation generated a new class of problems, the factorization problems, particularly studied by Petersen and Dénes Kőnig. The works of Ramsey on colorations, and more specially, the results obtained by Pál Turán in 1941, were at the origin of another branch of graph theory, known as extremal graph theory.
+The four-color problem remained unsolved for more than a century. In 1969, Heinrich Heesch published a method for solving the problem using computers. A computer-aided proof produced in 1976 by Kenneth Appel and Wolfgang Haken makes fundamental use of the notion of "discharging" developed by Heesch. The proof involved checking the properties of 1,936 configurations by computer, and was not fully accepted at the time due to its complexity. A simpler proof considering only 633 configurations was given twenty years later by Robertson, Seymour, Sanders and Thomas.
+The introduction of probabilistic methods in graph theory, especially in the study of Erdős and Rényi of the asymptotic probability of graph connectivity, gave rise to yet another branch, known as random graph theory, which has been a fruitful source of graph-theoretic results.
+
+
+Subareas
+
+
+Topological graph theory
+
+Topological graph theory deals with the study of graphs as topological spaces. The graph in a topology is a set of simplexes that is called the simplicial one-dimensional complex. This subarea studies the embedding (or imbedding) of a graph in surface and linkless embedding, graph minors, crossing number, map coloring, and voltage graph.
+The embedding of a graph in a surface is the representation of a graph in which the points are associated with the vertices and simple arcs with edges in a surface. The endpoints are associated with an edge, and the points with the end vertices. No arcs include points associated with other vertices, and two arcs never intersect at a point that is interior to either of the arcs. The graph embedding can be generalized into the linkless embedding, whereby no two cycles of the graph are linked in three-dimensional Euclidean space, and a book, a collection of half-planes all having the same line as their boundary.
+The graph is said to be minor if it can be formed from another graph by deleting vertices and edges, and by edge-contraction. The earliest result of the graph minor theory is from Wagner's theorem, stating that a finite graph is planar if and only if its minor includes neither the complete graph on five vertices
+
+
+
+
+          K
+
+            5
+
+
+
+
+    {\displaystyle K_{5}}
+
+ nor the utility graph. A related result is the Robertson–Seymour theorem, implying the existence of forbidden minor for every property of graphs preserved by deletions and edge contractions.
+The crossing number tells the minimum number of crossing edges of a graph. This study originated from a Hungarian mathematician Pál Turán who asked for a factory plan that minimized the number of crossings between tracks connecting brick kilns to storage sites. This problem can be formalized as asking for the crossing number of a complete bipartite graph.
+A graph coloring is a methodical assignment of labelling the elements of a graph, which is traditionally called colors. In coloring, no two adjacent elements have the same color. It requires the minimum number of colors, which is known as the chromatic number. Four-color theorem stated that no more than four colors are required to color the regions of any map so that no two adjacent regions have the same color; that is, no two regions share a common boundary. This theorem is stronger than five-color theorem. Relatedly, Earth–Moon problem is known for the nowadays open problem on extension of the planar map coloring problem, solved by the four-color theorem.
+A voltage graph is a directed graph whose edges are labelled invertibly by elements of a group. This graph concisely specifies the derived graph. It is also a common way to form a covering graph.
+
+
+Algebraic graph theory
+
+Algebraic graph theory is the study of graph theory that involves major branches of algebra. Major branches of algebra that are used are linear algebra and group theory.
+A study of graph theory using linear algebra is called spectral graph theory. This study focuses on adjacency matrix, a matrix that represents the graph, and its spectrum, which focuses on the characteristic polynomial, eigenvalues, and eigenvectors of the given adjacency matrix. It also focuses on the Laplacian matrix of a graph, which involves the degree matrix (a diagonal matrix that represents the degree of a vertex) and the adjacency matrix.
+Group theory, particularly automorphism groups and geometric group theory, focuses on various families of graphs based on symmetry in algebraic graph theory. Such a symmetry includes symmetric graphs, vertex-transitive graphs, edge-transitive graphs, distance-transitive graphs, distance-regular graphs, and strongly regular graphs. Frucht's theorem states that every finite group is the group of symmetries of a finite undirected graph, or more strongly, there exist infinitely many non-isomorphic simple connected graphs such that the automorphism group of each of them is isomorphic to a finite group.
+Algebraic graph theory also studies the algebraic invariants, chromatic polynomial, Tutte polynomial of a graph, and knot invariant. A graph invariant is a property of graphs that depends only on the abstract structure, instead of labellings or drawings of the graph. A chromatic polynomial is a polynomial that counts the number of graph colorings as a function of the number of colors. The Tutte polynomial is a two-variable polynomial on graph connectivity.
+
+
+Geometric graph theory
+
+Geometric graph theory focuses on combinatorial and geometric properties of a graph that is drawn in a plane with straight-line or continuous curved edges in Euclidean space. As part of discrete geometry and computational geometry, geometric graph theory studies planar graphs, relationship to higher-dimensional convex polytopes, intersection of geometrical shaped sets, and other geometries' subareas of incidence geometry and projective geometry.
+A planar graph wherein its vertices are embedded as points, and its edges are non-crossing line segments in the Euclidean plane is called planar straight-line graph. Any planar graph can be represented as a planar straight-line graph by Fáry's theorem. The planar straight-line graph is the special case of a Euclidean graph. The Euclidean graph allows its edges to have the length of the Euclidean distance between its endpoints. Its notions are the Euclidean minimum spanning tree on minimizing the total length of the segments for finite points in any Euclidean space, Hadwiger–Nelson problem on asking for the minimum number of coloring plane such that no two points at a unit distance from each other have the same color, and shortest path problem on finding a path between two vertices in a graph that minimizes the sum of the assigned values of its edges.
+A visibility graph is a graph whose vertices and edges are the point locat
+
+[内容截取，完整内容请查阅 Wikipedia]

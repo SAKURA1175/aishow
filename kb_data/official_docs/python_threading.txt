@@ -1,0 +1,1363 @@
+threading
+ â Thread-based parallelism
+Â¶
+
+
+Source code:
+ 
+Lib/threading.py
+
+
+This module constructs higher-level threading interfaces on top of the lower
+level 
+_thread
+ module.
+
+
+Availability
+: not WASI.
+
+
+This module does not work or is not available on WebAssembly. See
+
+WebAssembly platforms
+ for more information.
+
+
+Introduction
+Â¶
+
+
+The 
+threading
+ module provides a way to run multiple 
+threads
+ (smaller
+units of a process) concurrently within a single process. It allows for the
+creation and management of threads, making it possible to execute tasks in
+parallel, sharing memory space. Threads are particularly useful when tasks are
+I/O bound, such as file operations or making network requests,
+where much of the time is spent waiting for external resources.
+
+
+A typical use case for 
+threading
+ includes managing a pool of worker
+threads that can process multiple tasks concurrently.  Hereâs a basic example of
+creating and starting threads using 
+Thread
+:
+
+
+import
+ 
+threading
+
+
+import
+ 
+time
+
+
+def
+ 
+crawl
+(
+link
+,
+ 
+delay
+=
+3
+):
+
+    
+print
+(
+f
+"crawl started for 
+{
+link
+}
+"
+)
+
+    
+time
+.
+sleep
+(
+delay
+)
+  
+# Blocking I/O (simulating a network request)
+
+    
+print
+(
+f
+"crawl ended for 
+{
+link
+}
+"
+)
+
+
+links
+ 
+=
+ 
+[
+
+    
+"https://python.org"
+,
+
+    
+"https://docs.python.org"
+,
+
+    
+"https://peps.python.org"
+,
+
+
+]
+
+
+# Start threads for each link
+
+
+threads
+ 
+=
+ 
+[]
+
+
+for
+ 
+link
+ 
+in
+ 
+links
+:
+
+    
+# Using `args` to pass positional arguments and `kwargs` for keyword arguments
+
+    
+t
+ 
+=
+ 
+threading
+.
+Thread
+(
+target
+=
+crawl
+,
+ 
+args
+=
+(
+link
+,),
+ 
+kwargs
+=
+{
+"delay"
+:
+ 
+2
+})
+
+    
+threads
+.
+append
+(
+t
+)
+
+
+# Start each thread
+
+
+for
+ 
+t
+ 
+in
+ 
+threads
+:
+
+    
+t
+.
+start
+()
+
+
+# Wait for all threads to finish
+
+
+for
+ 
+t
+ 
+in
+ 
+threads
+:
+
+    
+t
+.
+join
+()
+
+
+Changed in version 3.7: 
+This module used to be optional, it is now always available.
+
+
+See also
+
+
+concurrent.futures.ThreadPoolExecutor
+ offers a higher level interface
+to push tasks to a background thread without blocking execution of the
+calling thread, while still being able to retrieve their results when needed.
+
+
+queue
+ provides a thread-safe interface for exchanging data between
+running threads.
+
+
+asyncio
+ offers an alternative approach to achieving task level
+concurrency without requiring the use of multiple operating system threads.
+
+
+Note
+
+
+In the Python 2.x series, this module contained 
+camelCase
+ names
+for some methods and functions. These are deprecated as of Python 3.10,
+but they are still supported for compatibility with Python 2.5 and lower.
+
+
+CPython implementation detail:
+ In CPython, due to the 
+Global Interpreter Lock
+, only one thread
+can execute Python code at once (even though certain performance-oriented
+libraries might overcome this limitation).
+If you want your application to make better use of the computational
+resources of multi-core machines, you are advised to use
+
+multiprocessing
+ or 
+concurrent.futures.ProcessPoolExecutor
+.
+However, threading is still an appropriate model if you want to run
+multiple I/O-bound tasks simultaneously.
+
+
+GIL and performance considerations
+Â¶
+
+
+Unlike the 
+multiprocessing
+ module, which uses separate processes to
+bypass the 
+global interpreter lock
+ (GIL), the threading module operates
+within a single process, meaning that all threads share the same memory space.
+However, the GIL limits the performance gains of threading when it comes to
+CPU-bound tasks, as only one thread can execute Python bytecode at a time.
+Despite this, threads remain a useful tool for achieving concurrency in many
+scenarios.
+
+
+As of Python 3.13, 
+free-threaded
+ builds
+can disable the GIL, enabling true parallel execution of threads, but this
+feature is not available by default (see 
+PEP 703
+).
+
+
+Reference
+Â¶
+
+
+This module defines the following functions:
+
+
+threading.
+active_count
+(
+)
+Â¶
+
+
+Return the number of 
+Thread
+ objects currently alive.  The returned
+count is equal to the length of the list returned by 
+enumerate()
+.
+
+
+The function 
+activeCount
+ is a deprecated alias for this function.
+
+
+threading.
+current_thread
+(
+)
+Â¶
+
+
+Return the current 
+Thread
+ object, corresponding to the callerâs thread
+of control.  If the callerâs thread of control was not created through the
+
+threading
+ module, a dummy thread object with limited functionality is
+returned.
+
+
+The function 
+currentThread
+ is a deprecated alias for this function.
+
+
+threading.
+excepthook
+(
+args
+, 
+/
+)
+Â¶
+
+
+Handle uncaught exception raised by 
+Thread.run()
+.
+
+
+The 
+args
+ argument has the following attributes:
+
+
+exc_type
+: Exception type.
+
+
+exc_value
+: Exception value, can be 
+None
+.
+
+
+exc_traceback
+: Exception traceback, can be 
+None
+.
+
+
+thread
+: Thread which raised the exception, can be 
+None
+.
+
+
+If 
+exc_type
+ is 
+SystemExit
+, the exception is silently ignored.
+Otherwise, the exception is printed out on 
+sys.stderr
+.
+
+
+If  this function raises an exception, 
+sys.excepthook()
+ is called to
+handle it.
+
+
+threading.excepthook()
+ can be overridden to control how uncaught
+exceptions raised by 
+Thread.run()
+ are handled.
+
+
+Storing 
+exc_value
+ using a custom hook can create a reference cycle. It
+should be cleared explicitly to break the reference cycle when the
+exception is no longer needed.
+
+
+Storing 
+thread
+ using a custom hook can resurrect it if it is set to an
+object which is being finalized. Avoid storing 
+thread
+ after the custom
+hook completes to avoid resurrecting objects.
+
+
+See also
+
+
+sys.excepthook()
+ handles uncaught exceptions.
+
+
+Added in version 3.8.
+
+
+threading.
+__excepthook__
+Â¶
+
+
+Holds the original value of 
+threading.excepthook()
+. It is saved so that the
+original value can be restored in case they happen to get replaced with
+broken or alternative objects.
+
+
+Added in version 3.10.
+
+
+threading.
+get_ident
+(
+)
+Â¶
+
+
+Return the âthread identifierâ of the current thread.  This is a nonzero
+integer.  Its value has no direct meaning; it is intended as a magic cookie
+to be used e.g. to index a dictionary of thread-specific data.  Thread
+identifiers may be recycled when a thread exits and another thread is
+created.
+
+
+Added in version 3.3.
+
+
+threading.
+get_native_id
+(
+)
+Â¶
+
+
+Return the native integral Thread ID of the current thread assigned by the kernel.
+This is a non-negative integer.
+Its value may be used to uniquely identify this particular thread system-wide
+(until the thread terminates, after which the value may be recycled by the OS).
+
+
+Availability
+: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+
+
+Added in version 3.8.
+
+
+Changed in version 3.13: 
+Added support for GNU/kFreeBSD.
+
+
+threading.
+enumerate
+(
+)
+Â¶
+
+
+Return a list of all 
+Thread
+ objects currently active.  The list
+includes daemonic threads and dummy thread objects created by
+
+current_thread()
+.  It excludes terminated threads and threads
+that have not yet been started.  However, the main thread is always part
+of the result, even when terminated.
+
+
+threading.
+main_thread
+(
+)
+Â¶
+
+
+Return the main 
+Thread
+ object.  In normal conditions, the
+main thread is the thread from which the Python interpreter was
+started.
+
+
+Added in version 3.4.
+
+
+threading.
+settrace
+(
+func
+)
+Â¶
+
+
+Set a trace function for all threads started from the 
+threading
+ module.
+The 
+func
+ will be passed to  
+sys.settrace()
+ for each thread, before its
+
+run()
+ method is called.
+
+
+threading.
+settrace_all_threads
+(
+func
+)
+Â¶
+
+
+Set a trace function for all threads started from the 
+threading
+ module
+and all Python threads that are currently executing.
+
+
+The 
+func
+ will be passed to  
+sys.settrace()
+ for each thread, before its
+
+run()
+ method is called.
+
+
+Added in version 3.12.
+
+
+threading.
+gettrace
+(
+)
+Â¶
+
+
+Get the trace function as set by 
+settrace()
+.
+
+
+Added in version 3.10.
+
+
+threading.
+setprofile
+(
+func
+)
+Â¶
+
+
+Set a profile function for all threads started from the 
+threading
+ module.
+The 
+func
+ will be passed to  
+sys.setprofile()
+ for each thread, before its
+
+run()
+ method is called.
+
+
+threading.
+setprofile_all_threads
+(
+func
+)
+Â¶
+
+
+Set a profile function for all threads started from the 
+threading
+ module
+and all Python threads that are currently executing.
+
+
+The 
+func
+ will be passed to  
+sys.setprofile()
+ for each thread, before its
+
+run()
+ method is called.
+
+
+Added in version 3.12.
+
+
+threading.
+getprofile
+(
+)
+Â¶
+
+
+Get the profiler function as set by 
+setprofile()
+.
+
+
+Added in version 3.10.
+
+
+threading.
+stack_size
+(
+[
+size
+]
+)
+Â¶
+
+
+Return the thread stack size used when creating new threads.  The optional
+
+size
+ argument specifies the stack size to be used for subsequently created
+threads, and must be 0 (use platform or configured default) or a positive
+integer value of at least 32,768 (32 KiB). If 
+size
+ is not specified,
+0 is used.  If changing the thread stack size is
+unsupported, a 
+RuntimeError
+ is raised.  If the specified stack size is
+invalid, a 
+ValueError
+ is raised and the stack size is unmodified.  32 KiB
+is currently the minimum supported stack size value to guarantee sufficient
+stack space for the interpreter itself.  Note that some platforms may have
+particular restrictions on values for the stack size, such as requiring a
+minimum stack size > 32 KiB or requiring allocation in multiples of the system
+memory page size - platform documentation should be referred to for more
+information (4 KiB pages are common; using multiples of 4096 for the stack size is
+the suggested approach in the absence of more specific information).
+
+
+Availability
+: Windows, pthreads.
+
+
+Unix platforms with POSIX threads support.
+
+
+This module also defines the following constant:
+
+
+threading.
+TIMEOUT_MAX
+Â¶
+
+
+The maximum value allowed for the 
+timeout
+ parameter of blocking functions
+(
+Lock.acquire()
+, 
+RLock.acquire()
+, 
+Condition.wait()
+, etc.).
+Specifying a timeout greater than this value will raise an
+
+OverflowError
+.
+
+
+Added in version 3.2.
+
+
+This module defines a number of classes, which are detailed in the sections
+below.
+
+
+The design of this module is loosely based on Javaâs threading model. However,
+where Java makes locks and condition variables basic behavior of every object,
+they are separate objects in Python.  Pythonâs 
+Thread
+ class supports a
+subset of the behavior of Javaâs Thread class; currently, there are no
+priorities, no thread groups, and threads cannot be destroyed, stopped,
+suspended, resumed, or interrupted.  The static methods of Javaâs Thread class,
+when implemented, are mapped to module-level functions.
+
+
+All of the methods described below are executed atomically.
+
+
+Thread-local data
+Â¶
+
+
+Thread-local data is data whose values are thread specific. If you
+have data that you want to be local to a thread, create a
+
+local
+ object and use its attributes:
+
+
+>>> 
+mydata
+ 
+=
+ 
+local
+()
+
+
+>>> 
+mydata
+.
+number
+ 
+=
+ 
+42
+
+
+>>> 
+mydata
+.
+number
+
+
+42
+
+
+You can also access the 
+local
+-objectâs dictionary:
+
+
+>>> 
+mydata
+.
+__dict__
+
+
+{'number': 42}
+
+
+>>> 
+mydata
+.
+__dict__
+.
+setdefault
+(
+'widgets'
+,
+ 
+[])
+
+
+[]
+
+
+>>> 
+mydata
+.
+widgets
+
+
+[]
+
+
+If we access the data in a different thread:
+
+
+>>> 
+log
+ 
+=
+ 
+[]
+
+
+>>> 
+def
+ 
+f
+():
+
+
+... 
+    
+items
+ 
+=
+ 
+sorted
+(
+mydata
+.
+__dict__
+.
+items
+())
+
+
+... 
+    
+log
+.
+append
+(
+items
+)
+
+
+... 
+    
+mydata
+.
+number
+ 
+=
+ 
+11
+
+
+... 
+    
+log
+.
+append
+(
+mydata
+.
+number
+)
+
+
+>>> 
+import
+ 
+threading
+
+
+>>> 
+thread
+ 
+=
+ 
+threading
+.
+Thread
+(
+target
+=
+f
+)
+
+
+>>> 
+thread
+.
+start
+()
+
+
+>>> 
+thread
+.
+join
+()
+
+
+>>> 
+log
+
+
+[[], 11]
+
+
+we get different data.  Furthermore, changes made in the other thread
+donât affect data seen in this thread:
+
+
+>>> 
+mydata
+.
+number
+
+
+42
+
+
+Of course, values you get from a 
+local
+ object, including their
+
+__dict__
+ attribute, are for whatever thread was current
+at the time the attribute was read.  For that reason, you generally
+donât want to save these values across threads, as they apply only to
+the thread they came from.
+
+
+You can create custom 
+local
+ objects by subclassing the
+
+local
+ class:
+
+
+>>> 
+class
+ 
+MyLocal
+(
+local
+):
+
+
+... 
+    
+number
+ 
+=
+ 
+2
+
+
+... 
+    
+def
+ 
+__init__
+(
+self
+,
+ 
+/
+,
+ 
+**
+kw
+):
+
+
+... 
+        
+self
+.
+__dict__
+.
+update
+(
+kw
+)
+
+
+... 
+    
+def
+ 
+squared
+(
+self
+):
+
+
+... 
+        
+return
+ 
+self
+.
+number
+ 
+**
+ 
+2
+
+
+This can be useful to support default values, methods and
+initialization.  Note that if you define an 
+__init__()
+
+method, it will be called each time the 
+local
+ object is used
+in a separate thread.  This is necessary to initialize each threadâs
+dictionary.
+
+
+Now if we create a 
+local
+ object:
+
+
+>>> 
+mydata
+ 
+=
+ 
+MyLocal
+(
+color
+=
+'red'
+)
+
+
+we have a default number:
+
+
+>>> 
+mydata
+.
+number
+
+
+2
+
+
+an initial color:
+
+
+>>> 
+mydata
+.
+color
+
+
+'red'
+
+
+>>> 
+del
+ 
+mydata
+.
+color
+
+
+And a method that operates on the data:
+
+
+>>> 
+mydata
+.
+squared
+()
+
+
+4
+
+
+As before, we can access the data in a separate thread:
+
+
+>>> 
+log
+ 
+=
+ 
+[]
+
+
+>>> 
+thread
+ 
+=
+ 
+threading
+.
+Thread
+(
+target
+=
+f
+)
+
+
+>>> 
+thread
+.
+start
+()
+
+
+>>> 
+thread
+.
+join
+()
+
+
+>>> 
+log
+
+
+[[('color', 'red')], 11]
+
+
+without affecting this threadâs data:
+
+
+>>> 
+mydata
+.
+number
+
+
+2
+
+
+>>> 
+mydata
+.
+color
+
+
+Traceback (most recent call last):
+
+
+...
+
+
+AttributeError
+: 
+'MyLocal' object has no attribute 'color'
+
+
+Note that subclasses can define 
+__slots__
+, but they are not
+thread local. They are shared across threads:
+
+
+>>> 
+class
+ 
+MyLocal
+(
+local
+):
+
+
+... 
+    
+__slots__
+ 
+=
+ 
+'number'
+
+
+>>> 
+mydata
+ 
+=
+ 
+MyLocal
+()
+
+
+>>> 
+mydata
+.
+number
+ 
+=
+ 
+42
+
+
+>>> 
+mydata
+.
+color
+ 
+=
+ 
+'red'
+
+
+So, the separate thread:
+
+
+>>> 
+thread
+ 
+=
+ 
+threading
+.
+Thread
+(
+target
+=
+f
+)
+
+
+>>> 
+thread
+.
+start
+()
+
+
+>>> 
+thread
+.
+join
+()
+
+
+affects what we see:
+
+
+>>> 
+mydata
+.
+number
+
+
+11
+
+
+class
+ 
+threading.
+local
+Â¶
+
+
+A class that represents thread-local data.
+
+
+Thread objects
+Â¶
+
+
+The 
+Thread
+ class represents an activity that is run in a separate
+thread of control.  There are two ways to specify the activity: by passing a
+callable object to the constructor, or by overriding the 
+run()
+
+method in a subclass.  No other methods (except for the constructor) should be
+overridden in a subclass.  In other words, 
+only
+  override the
+
+__init__()
+ and 
+run()
+ methods of this class.
+
+
+Once a thread object is created, its activity must be started by calling the
+threadâs 
+start()
+ method.  This invokes the 
+run()
+
+method in a separate thread of control.
+
+
+Once the threadâs activity is started, the thread is considered âaliveâ. It
+stops being alive when its 
+run()
+ method terminates â either
+normally, or by raising an unhandled exception.  The 
+is_alive()
+
+method tests whether the thread is alive.
+
+
+Other threads can call a threadâs 
+join()
+ method.  This blocks
+the calling thread until the thread whose 
+join()
+ method is
+called is terminated.
+
+
+A thread has a name.  The name can be passed to the constructor, and read or
+changed through the 
+name
+ attribute.
+
+
+If the 
+run()
+ method raises an exception,
+
+threading.excepthook()
+ is called to handle it. By default,
+
+threading.excepthook()
+ ignores silently 
+SystemExit
+.
+
+
+A thread can be flagged as a âdaemon threadâ.  The significance o
+
+[内容截取，详见官方文档]

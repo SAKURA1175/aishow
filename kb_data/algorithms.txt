@@ -1,0 +1,136 @@
+# Algorithm
+
+In mathematics and computer science, an algorithm ( ) is a finite sequence of mathematically rigorous instructions, typically used to solve a class of specific problems or to perform a computation. Algorithms are used as specifications for performing calculations and data processing. More advanced algorithms can use conditionals to divert the code execution through various routes (referred to as automated decision-making) and deduce valid inferences (referred to as automated reasoning).
+In contrast, a heuristic is an approach to solving problems without well-defined correct or optimal results. For example, although social media recommender systems are commonly called "algorithms", they actually rely on heuristics as there is no truly "correct" recommendation.
+As an effective method, an algorithm can be expressed within a finite amount of space and time and in a well-defined formal language for calculating a function. Starting from an initial state and initial input (perhaps empty), the instructions describe a computation that, when executed, proceeds through a finite number of well-defined successive states, eventually producing "output" and terminating at a final ending state. The transition from one state to the next is not necessarily deterministic; some algorithms, known as randomized algorithms, incorporate random input.
+
+
+Etymology
+Around 825 AD, Persian scientist and polymath Muḥammad ibn Mūsā al-Khwārizmī wrote kitāb al-ḥisāb al-hindī ("Book of Indian computation") and kitab al-jam' wa'l-tafriq al-ḥisāb al-hindī ("Addition and subtraction in Indian arithmetic"). In the early 12th century, Latin translations of these texts involving the Hindu–Arabic numeral system and arithmetic appeared, for example Liber Alghoarismi de practica arismetrice, attributed to John of Seville, and Liber Algoritmi de numero Indorum, attributed to Adelard of Bath. Here, alghoarismi or algoritmi is the Latinization of Al-Khwarizmi's name; the text starts with the phrase Dixit Algoritmi, or "Thus spoke Al-Khwarizmi".
+
+The word algorism in English came to mean the use of place-value notation in calculations; it occurs in the Ancrene Wisse from circa 1225. By the time Geoffrey Chaucer wrote The Canterbury Tales in the late 14th century, he used a variant of the same word in describing augrym stones, stones used for place-value calculation. In the 15th century, under the influence of the Greek word ἀριθμός (arithmos, "number"; cf. "arithmetic"), the Latin word was altered to algorithmus. By 1596, this form of the word was used in English, as algorithm, by Thomas Hood.
+
+
+Definition
+
+One informal definition is "a set of rules that precisely defines a sequence of operations", which would include all computer programs (including programs that do not perform numeric calculations), and any prescribed bureaucratic procedure
+or cook-book recipe. In general, a program is an algorithm only if it stops eventually—even though infinite loops may sometimes prove desirable. Boolos, Jeffrey & 1974, 1999 define an algorithm to be an explicit set of instructions for determining an output, that can be followed by a computing machine or a human who could only carry out specific elementary operations on symbols.
+
+
+History
+
+
+Ancient algorithms
+Step-by-step procedures for solving mathematical problems have been recorded since antiquity. This includes in Babylonian mathematics (around 2500 BC), Egyptian mathematics (around 1550 BC), Indian mathematics (around 800 BC and later), the Ifa Oracle (around 500 BC), Greek mathematics (around 240 BC), Chinese mathematics (around 200 BC and later), and Arabic mathematics (around 800 AD).
+The earliest evidence of algorithms is found in ancient Mesopotamian mathematics. A Sumerian clay tablet found in Shuruppak near Baghdad and dated to c. 2500 BC describes the earliest division algorithm. During the Hammurabi dynasty c. 1800 – c. 1600 BC, Babylonian clay tablets described algorithms for computing formulas. Algorithms were also used in Babylonian astronomy. Babylonian clay tablets describe and employ algorithmic procedures to compute the time and place of significant astronomical events.
+Algorithms for arithmetic are also found in ancient Egyptian mathematics, dating back to the Rhind Mathematical Papyrus c. 1550 BC. Algorithms were later used in ancient Hellenistic mathematics. Two examples are the Sieve of Eratosthenes, which was described in the Introduction to Arithmetic by Nicomachus, and the Euclidean algorithm, which was first described in Euclid's Elements (c. 300 BC).Examples of ancient Indian mathematics included the Shulba Sutras, the Kerala School, and the Brāhmasphuṭasiddhānta.
+In the 9th century, Muḥammad ibn Mūsā al-Khwārizmī revolutionized the field by establishing the algorithm as a systematic, finite sequence of logical steps to solve mathematical problems. In his influential work, The Compendious Book on Calculation by Completion and Balancing, he moved beyond specific numerical solutions to introduce general procedures for algebraic reduction and balancing. This transformed mathematics into a 'mechanical' process of well-defined rules—a fundamental shift that laid the groundwork for modern algorithmic theory. The Latin translation of his arithmetic treatise, titled Algoritmi de numero Indorum, led to the term algorithm being derived from the Latinization of his name, Algoritmi, specifically to describe this new rule-based approach to .
+The first cryptographic algorithm for deciphering encrypted code was developed by Al-Kindi, a 9th-century Arab mathematician, in A Manuscript On Deciphering Cryptographic Messages. He gave the first description of cryptanalysis by frequency analysis, the earliest codebreaking algorithm.
+
+
+Computers
+
+
+Weight-driven clocks
+David Bolter credits the invention of the weight-driven clock as "the key invention [of Europe in the Middle Ages]," specifically the verge escapement mechanism producing the tick and tock of a mechanical clock. "The accurate automatic machine" led immediately to "mechanical automata" in the 13th century and "computational machines"—the difference and analytical engines of Charles Babbage and Ada Lovelace in the mid-19th century. Lovelace designed the first algorithm intended for processing on a computer, Babbage's analytical engine, which is the first device considered a real Turing-complete computer instead of just a calculator. Although the full implementation of Babbage's second device was not realized for decades after her lifetime, Lovelace has been called "history's first programmer".
+
+
+Electromechanical relay
+Bell and Newell (1971) write that the Jacquard loom, a precursor to Hollerith cards (punch cards), and "telephone switching technologies" led to the development of the first computers. By the mid-19th century, the telegraph, the precursor of the telephone, was in use throughout the world. By the late 19th century, the ticker tape (c. 1870s) was in use, as were Hollerith cards (c. 1890). Then came the teleprinter (c. 1910) with its punched-paper use of Baudot code on tape.
+Telephone-switching networks of electromechanical relays were invented in 1835. These led to the invention of the digital adding device by George Stibitz in 1937. While working in Bell Laboratories, he observed the "burdensome" use of mechanical calculators with gears. "He went home one evening in 1937 intending to test his idea... When the tinkering was over, Stibitz had constructed a binary adding device".
+
+
+Formalization
+
+In 1928, a partial formalization of the modern concept of algorithms began with attempts to solve the Entscheidungsproblem (decision problem) posed by David Hilbert. Later formalizations were framed as attempts to define "effective calculability" or "effective method". Those formalizations included the Gödel–Herbrand–Kleene recursive functions of 1930, 1934 and 1935, Alonzo Church's lambda calculus of 1936, Emil Post's Formulation 1 of 1936, and Alan Turing's Turing machines of 1936–37 and 1939.
+
+
+Modern Algorithms
+Algorithms have evolved and improved in many ways as time goes on. Common uses of algorithms today include social media apps like Instagram and YouTube. Algorithms are used as a way to analyze what people like and push more of those things to the people who interact with them. Quantum computing uses quantum algorithm procedures to solve problems faster. More recently, in 2024, NIST updated their post-quantum encryption standards, which includes new encryption algorithms to enhance defenses against attacks using quantum computing.
+
+
+Representations
+Algorithms can be expressed in many kinds of notation, including natural languages, pseudocode, flowcharts, drakon-charts, programming languages or control tables (processed by interpreters). Natural language expressions of algorithms tend to be verbose and ambiguous and are rarely used for complex or technical algorithms. Pseudocode, flowcharts, drakon-charts, and control tables are structured expressions of algorithms that avoid common ambiguities of natural language. Programming languages are primarily for expressing algorithms in a computer-executable form but are also used to define or document algorithms.
+
+
+Turing machines
+There are many possible representations and Turing machine programs can be expressed as a sequence of machine tables (see finite-state machine, state-transition table, and control table for more), as flowcharts and drakon-charts (see state diagram for more), as a form of rudimentary machine code or assembly code called "sets of quadruples", and more. Algorithm representations can also be classified into three accepted levels of Turing machine description: high-level description, implementation description, and formal description. A high-level description describes the qualities of the algorithm itself, ignoring how it is implemented on the Turing machine. An implementation description describes the general manner in which the machine moves its head and stores data to carry out the algorithm, but does not give exact states. In the most detail, a formal description gives the exact state table and list of transitions of the Turing machine.
+
+
+Flowchart representation
+The graphical aid called a flowchart offers a way to describe and document an algorithm (and a computer program corresponding to it). It has four primary symbols: arrows showing program flow, rectangles (SEQUENCE, GOTO), diamonds (IF-THEN-ELSE), and dots (OR-tie). Sub-structures can "nest" in rectangles, but only if a single exit occurs from the superstructure.
+
+
+Algorithmic analysis
+
+It is often important to know how much time, storage, or other cost an algorithm may require. Methods have been developed for the analysis of algorithms to obtain such quantitative answers (estimates); for example, an algorithm that adds up the elements of a list of n numbers would have a time requirement of ⁠
+
+
+
+        O
+        (
+        n
+        )
+
+
+    {\displaystyle O(n)}
+
+⁠, using big O notation. The algorithm only needs to remember two values: the sum of all the elements so far, and its current position in the input list. If the space required to store the input numbers is not counted, it has a space requirement of ⁠
+
+
+
+        O
+        (
+        1
+        )
+
+
+    {\displaystyle O(1)}
+
+⁠, otherwise ⁠
+
+
+
+        O
+        (
+        n
+        )
+
+
+    {\displaystyle O(n)}
+
+⁠ is required.
+Different algorithms may complete the same task with a different set of instructions in less or more time, space, or 'effort' than others. For example, a binary search algorithm (with cost ⁠
+
+
+
+        O
+        (
+        log
+        ⁡
+        n
+        )
+
+
+    {\displaystyle O(\log n)}
+
+⁠) outperforms a sequential search (cost ⁠
+
+
+
+        O
+        (
+        n
+        )
+
+
+    {\displaystyle O(n)}
+
+⁠ ) when used for table lookups on sorted lists or arrays.
+
+
+Formal versus empirical
+
+The analysis, and study of algorithms is a discipline of computer science. Algorithms are often studied abstractly, 
+
+[内容截取，完整内容请查阅 Wikipedia]

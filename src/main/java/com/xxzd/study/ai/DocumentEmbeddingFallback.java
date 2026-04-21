@@ -25,7 +25,16 @@ public class DocumentEmbeddingFallback {
     @Resource
     private DocumentChunkMapper documentChunkMapper;
 
-    public List<DocumentChunk> search(float[] queryVec, int topK) {
+    public List<DocumentChunk> search(float[] queryVec, int topK, int maxScanRows) {
+        int total = documentEmbeddingMapper.countAll();
+        if (total <= 0) {
+            return Collections.emptyList();
+        }
+        if (maxScanRows > 0 && total > maxScanRows) {
+            System.err.println("[VectorRAG] 跳过 MySQL 全量降级检索: total=" + total + ", limit=" + maxScanRows);
+            return Collections.emptyList();
+        }
+
         List<DocumentEmbedding> all = documentEmbeddingMapper.selectAll();
         if (all == null || all.isEmpty()) return Collections.emptyList();
 

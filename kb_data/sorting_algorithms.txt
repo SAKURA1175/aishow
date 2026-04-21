@@ -1,0 +1,183 @@
+# Sorting algorithm
+
+In computer science, a sorting algorithm is an algorithm that puts elements of a list into an order. The most frequently used orders are numerical order and lexicographical order, and either ascending or descending. Efficient sorting is important for optimizing the efficiency of other algorithms (such as search and merge algorithms) that require input data to be in sorted lists. Sorting is also often useful for canonicalizing data and for producing human-readable output.
+Formally, the output of any sorting algorithm must satisfy two conditions:
+
+The output is in monotonic order (each element is no smaller/larger than the previous element, according to the required order).
+The output is a permutation (a reordering, yet retaining all of the original elements) of the input.
+Although some algorithms are designed for sequential access, the highest-performing algorithms assume data is stored in a data structure which allows random access.
+
+
+History and concepts
+From the beginning of computing, the sorting problem has attracted a great deal of research, perhaps due to the complexity of solving it efficiently despite its simple, familiar statement. Among the authors of early sorting algorithms around 1951 was Betty Holberton, who worked on ENIAC and UNIVAC. Bubble sort was analyzed as early as 1956. Asymptotically optimal algorithms have been known since the mid-20th century –  new algorithms are still being invented, with the widely used Timsort dating to 2002, and the library sort being first published in 2006.
+Comparison sorting algorithms have a fundamental requirement of n log n - 1.4427n + O(log n) comparisons. Algorithms not based on comparisons, such as counting sort, can have better performance.
+Sorting algorithms are prevalent in introductory computer science classes, where the abundance of algorithms for the problem provides a gentle introduction to a variety of core algorithm concepts, such as big O notation, divide-and-conquer algorithms, data structures such as heaps and binary trees, randomized algorithms, best, worst and average case analysis, time–space tradeoffs, and upper and lower bounds.
+Sorting small arrays optimally (in the fewest comparisons and swaps) or fast (i.e. taking into account machine-specific details) is still an open research problem, with solutions only known for very small arrays (<20 elements). Similarly optimal (by various definitions) sorting on a parallel machine is an open research topic.
+
+
+Classification
+Sorting algorithms can be classified by:
+
+Computational complexity
+Best, worst and average case behavior in terms of the size of the list. For typical serial sorting algorithms, good behavior is O(n log n), with parallel sort in O(log2 n), and bad behavior is O(n2). Ideal behavior for a serial sort is O(n), but this is not possible in the average case. Optimal parallel sorting is O(log n).
+Swaps for "in-place" algorithms.
+Memory usage (and use of other computer resources). In particular, some sorting algorithms are "in-place". Strictly, an in-place sort needs only O(1) memory beyond the items being sorted; sometimes O(log n) additional memory is considered "in-place".
+Recursion: Some algorithms are either typically recursive or typically non-recursive, while others may typically be both (e.g., merge sort).
+Stability: stable sorting algorithms maintain the relative order of records with equal keys (i.e., values).
+Whether or not they are a comparison sort. A comparison sort examines the data only by comparing two elements with a comparison operator.
+General method: insertion, exchange, selection, merging, etc. Exchange sorts include bubble sort and quicksort. Selection sorts include cycle sort and heapsort.
+Whether the algorithm is serial or parallel. The remainder of this discussion almost exclusively concentrates on serial algorithms and assumes serial operation.
+Adaptability: Whether or not the presortedness of the input affects the running time.  Algorithms that take this into account are known to be adaptive.
+Online: An algorithm such as Insertion Sort that is online can sort a constant stream of input.
+
+
+Stability
+
+Stable sorting algorithms sort equal elements in the same order that they appear in the input. For example, in the card sorting example to the right, the cards are being sorted by their rank, and their suit is being ignored. This allows the possibility of multiple different correctly sorted versions of the original list. Stable sorting algorithms choose one of these, according to the following rule: if two items compare as equal (like the two 5 cards), then their relative order will be preserved, i.e. if one comes before the other in the input, it will come before the other in the output.
+Stability is important to preserve order over multiple sorts on the same data set. For example, say that student records consisting of name and class section are sorted dynamically, first by name, then by class section. If a stable sorting algorithm is used in both cases, the sort-by-class-section operation will not change the name order; with an unstable sort, it could be that sorting by section shuffles the name order, resulting in a nonalphabetical list of students.
+More formally, the data being sorted can be represented as a record or tuple of values, and the part of the data that is used for sorting is called the key. In the card example, cards are represented as a record (rank, suit), and the key is the rank. A sorting algorithm is stable if whenever there are two records R and S with the same key, and R appears before S in the original list, then R will always appear before S in the sorted list.
+When equal elements are indistinguishable, such as with integers, or more generally, any data where the entire element is the key, stability is not an issue. Stability is also not an issue if all keys are different.
+Unstable sorting algorithms can be specially implemented to be stable. One way of doing this is to artificially extend the key comparison so that comparisons between two objects with otherwise equal keys are decided using the order of the entries in the original input list as a tie-breaker. Remembering this order, however, may require additional time and space.
+One application for stable sorting algorithms is sorting a list using a primary and secondary key. For example, suppose we wish to sort a hand of cards such that the suits are in the order clubs (♣), diamonds (♦), hearts (♥), spades (♠), and within each suit, the cards are sorted by rank. This can be done by first sorting the cards by rank (using any sort), and then doing a stable sort by suit:
+
+Within each suit, the stable sort preserves the ordering by rank that was already done. This idea can be extended to any number of keys and is utilised by radix sort. The same effect can be achieved with an unstable sort by using a lexicographic key comparison, which, e.g., compares first by suit, and then compares by rank if the suits are the same.
+
+
+Comparison of algorithms
+This analysis assumes that the length of each key is constant and that all comparisons, swaps and other operations can proceed in constant time.
+Legend:
+
+n is the number of records to be sorted.
+Comparison column has the following ranking classifications: "Best", "Average" and "Worst" if the time complexity is given for each case.
+"Memory" denotes the amount of additional storage required by the algorithm.
+The run times and the memory requirements listed are inside big O notation, hence the base of the logarithms does not matter.
+The notation log2 n means (log n)2.
+
+
+Comparison sorts
+Below is a table of comparison sorts. Mathematical analysis demonstrates a comparison sort cannot perform better than O(n log n) on average.
+
+
+Non-comparison sorts
+The following table describes integer sorting algorithms and other sorting algorithms that are not comparison sorts. These algorithms are not limited to Ω(n log n) unless meet unit-cost random-access machine model as described below.
+
+Complexities below assume n items to be sorted, with keys of size k, digit size d, and r the range of numbers to be sorted.
+Many of them are based on the assumption that the key size is large enough that all entries have unique key values, and hence that n ≪ 2k, where  ≪ means "much less than".
+In the unit-cost random-access machine model, algorithms with running time of
+
+
+
+        n
+        ⋅
+
+
+            k
+            d
+
+
+
+
+    {\displaystyle n\cdot {\frac {k}{d}}}
+
+, such as radix sort, still take time proportional to Θ(n log n), because n is limited to be not more than
+
+
+
+
+          2
+
+
+              k
+              d
+
+
+
+
+
+    {\displaystyle 2^{\frac {k}{d}}}
+
+, and a larger number of elements to sort would require a bigger k in order to store them in the memory.
+
+Samplesort can be used to parallelize any of the non-comparison sorts, by efficiently distributing data into several buckets and then passing down sorting to several processors, with no need to merge as buckets are already sorted between each other.
+
+
+Others
+Some algorithms are slow compared to those discussed above, such as the bogosort with unbounded run time and the stooge sort which has O(n2.7) run time. These sorts are usually described for educational purposes to demonstrate how the run time of algorithms is estimated. The following table describes some sorting algorithms that are impractical for real-life use in traditional software contexts due to extremely poor performance or specialized hardware requirements.
+
+Theoretical computer scientists have invented other sorting algorithms that provide better than O(n log n) time complexity assuming certain constraints, including:
+
+Thorup's algorithm, a randomized integer sorting algorithm, taking O(n log log n) time and O(n) space.
+AHNR algorithm, an integer sorting algorithm which runs in
+
+
+
+        O
+        (
+        n
+        log
+        ⁡
+        log
+        ⁡
+        n
+        )
+
+
+    {\displaystyle O(n\log \log n)}
+
+ time deterministically, and also has a randomized version which runs in linear time when words are large enough, specifically
+
+
+
+        w
+        ≥
+        (
+        log
+        ⁡
+        n
+
+          )
+
+            2
+            +
+            ε
+
+
+
+
+    {\displaystyle w\geq (\log n)^{2+\varepsilon }}
+
+ (where w is the word size).
+A randomized integer sorting algorithm taking
+
+
+
+        O
+
+          (
+
+            n
+
+
+                log
+                ⁡
+                log
+                ⁡
+                n
+
+
+
+          )
+
+
+
+    {\displaystyle O\left(n{\sqrt {\log \log n}}\right)}
+
+ expected time and O(n) space.
+
+
+Popular sorting algorithms
+While there are a large number of sorting algorithms, in practical implementations a few algorithms predominate. Insertion sort is widely used for small data sets, while for large data sets an asymptotically efficient sort is used, primarily heapsort, merge sort, or quicksort. Efficient implementations generally use a hybrid algorithm, combining an asymptotically efficient algorithm for the overall sort with insertion sort for small lists at the bottom of a recursion. Highly tuned implementations use more sophisticated variants, such as Timsort (merge sort, insertion sort, and additional logic), used in Android, Java, and Python, and introsort (quicksort and heapsort), used (in variant forms) in some C++ sort implementations and in .NET.
+For more restricted data, such as numbers in a fixed interval, distribution sorts such as counting sort or radix sort are widely used. Bubble sort and variants are rarely used in practice, but are commonly found in teaching and theoretical discussions.
+When physically sorting objects (such as alphabetizing papers, tests or books) people intuitively generally use insertion sorts for small sets. For larger sets, people often first bucket, such as by initial letter, and multiple bucketing allows practical sorting of very large sets. Often space is relatively cheap, such as by spreading objects out on the floor or over a large area,
+
+[内容截取，完整内容请查阅 Wikipedia]

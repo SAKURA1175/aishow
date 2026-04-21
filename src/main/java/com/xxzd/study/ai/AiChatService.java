@@ -33,4 +33,12 @@ public interface AiChatService {
      */
     reactor.core.publisher.Flux<String> streamChatWithImage(String systemPrompt, List<ChatMessage> history,
                                                             String userPrompt, String imageBase64, String mimeType);
+
+    /**
+     * 根据第一轮问答生成简短会话标题（最多 15 字）
+     */
+    default String generateTitle(String question, String answer) {
+        String prompt = "请根据以下对话生成一个简短的会话标题，要求：10字以内，直接输出标题文字，不要加引号或标点。\n用户问：" + question.substring(0, Math.min(question.length(), 80)) + "\nAI答：" + answer.substring(0, Math.min(answer.length(), 100));
+        return chat("你是一个助手，只输出标题文字，不超过10字，不带任何标点符号。", prompt);
+    }
 }

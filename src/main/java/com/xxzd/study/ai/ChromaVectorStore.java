@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.xxzd.study.config.properties.AiProperties;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -18,19 +20,27 @@ import java.util.*;
 @Component
 public class ChromaVectorStore {
 
-    private static final String BASE_URL  = "http://localhost:8000/api/v2";
-    private static final String TENANT    = "default_tenant";
-    private static final String DATABASE  = "default_database";
-    private static final String COL_NAME  = "study_docs";
-
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper mapper       = new ObjectMapper();
+    private final String baseUrl;
+    private final String tenant;
+    private final String database;
+    private final String collection;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     /** 集合 ID 缓存（懒加载） */
     private volatile String collectionId = null;
 
+    public ChromaVectorStore(AiProperties aiProperties) {
+        AiProperties.Chroma chroma = aiProperties != null ? aiProperties.getChroma() : null;
+        this.baseUrl = trimTrailingSlash(chroma != null ? chroma.getBaseUrl() : null, "http://localhost:8000/api/v2");
+        this.tenant = valueOrDefault(chroma != null ? chroma.getTenant() : null, "default_tenant");
+        this.database = valueOrDefault(chroma != null ? chroma.getDatabase() : null, "default_database");
+        this.collection = valueOrDefault(chroma != null ? chroma.getCollection() : null, "study_docs");
+        this.restTemplate = buildRestTemplate(chroma);
+    }
+
     private String colBase() {
-        return BASE_URL + "/tenants/" + TENANT + "/databases/" + DATABASE + "/collections";
+        return baseUrl + "/tenants/" + tenant + "/databases/" + database + "/collections";
     }
 
     // ── 初始化：确保集合存在 ──────────────────────────────────────────────────
@@ -55,25 +65,25 @@ public class ChromaVectorStore {
 
     private void ensureTenant() {
         try {
-            restTemplate.getForEntity(BASE_URL + "/tenants/" + TENANT, String.class);
+            restTemplate.getForEntity(baseUrl + "/tenants/" + tenant, String.class);
         } catch (HttpClientErrorException.NotFound e) {
             try {
                 ObjectNode body = mapper.createObjectNode();
-                body.put("name", TENANT);
-                post(BASE_URL + "/tenants", body);
+                body.put("name", tenant);
+                post(baseUrl + "/tenants", body);
             } catch (Exception ignored) {}
         } catch (Exception ignored) {}
     }
 
     private void ensureDatabase() {
-        String url = BASE_URL + "/tenants/" + TENANT + "/databases/" + DATABASE;
+        String url = baseUrl + "/tenants/" + tenant + "/databases/" + database;
         try {
             restTemplate.getForEntity(url, String.class);
         } catch (HttpClientErrorException.NotFound e) {
             try {
                 ObjectNode body = mapper.createObjectNode();
-                body.put("name", DATABASE);
-                post(BASE_URL + "/tenants/" + TENANT + "/databases", body);
+                body.put("name", database);
+                post(baseUrl + "/tenants/" + tenant + "/databases", body);
             } catch (Exception ignored) {}
         } catch (Exception ignored) {}
     }
@@ -81,7 +91,7 @@ public class ChromaVectorStore {
     private String fetchOrCreateCollection() {
         // 先尝试按名字获取
         try {
-            String url = colBase() + "/" + COL_NAME;
+            String url = colBase() + "/" + collection;
             ResponseEntity<String> resp = restTemplate.getForEntity(url, String.class);
             JsonNode node = mapper.readTree(resp.getBody());
             return node.path("id").asText();
@@ -94,7 +104,7 @@ public class ChromaVectorStore {
         // 创建
         try {
             ObjectNode body = mapper.createObjectNode();
-            body.put("name", COL_NAME);
+            body.put("name", collection);
             ObjectNode meta = mapper.createObjectNode();
             meta.put("hnsw:space", "cosine");
             body.set("metadata", meta);
@@ -217,6 +227,27 @@ public class ChromaVectorStore {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(mapper.writeValueAsString(body), headers);
         return restTemplate.postForEntity(url, entity, String.class);
+    }
+
+    private RestTemplate buildRestTemplate(AiProperties.Chroma chroma) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        int connectTimeout = chroma != null ? chroma.getConnectTimeoutMs() : 1500;
+        int readTimeout = chroma != null ? chroma.getReadTimeoutMs() : 4000;
+        factory.setConnectTimeout(connectTimeout);
+        factory.setReadTimeout(readTimeout);
+        return new RestTemplate(factory);
+    }
+
+    private String valueOrDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private String trimTrailingSlash(String value, String fallback) {
+        String resolved = valueOrDefault(value, fallback);
+        while (resolved.endsWith("/")) {
+            resolved = resolved.substring(0, resolved.length() - 1);
+        }
+        return resolved;
     }
 
     // ── Result DTO ───────────────────────────────────────────────────────────────

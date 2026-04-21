@@ -21,6 +21,8 @@ public interface DocumentEmbeddingMapper {
      */
     List<DocumentEmbedding> selectAll();
 
+    int countAll();
+
     /**
      * 按文档删除向量
      */

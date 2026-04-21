@@ -1,0 +1,82 @@
+# HTTP
+
+HTTP (Hypertext Transfer Protocol) is an application layer protocol in the Internet protocol suite for distributed, collaborative, hypermedia information systems. HTTP is the foundation of data communication for the World Wide Web, where hypertext documents include hyperlinks to other resources that the user can easily access, for example by a mouse click or by tapping the screen in a web browser.
+HTTP is a request–response protocol in the client–server model. A transaction starts with a client submitting a request to the server, the server attempts to satisfy the request and returns a response to the client that describes the disposition of the request and optionally contains a requested resource such as an HTML document or other content.
+In a common scenario, a web browser acts as the client, and a web server, hosting one or more websites, is the server. A web browser is an example of a user agent (UA). Other types of user agent include the indexing software used by search providers (web crawlers), voice browsers, mobile apps, and other software that accesses, consumes, or displays web content.
+HTTP is designed to permit intermediate network elements to improve or enable communications between clients and servers. High-traffic websites often benefit from web cache servers that deliver content on behalf of upstream servers to improve response time. Web browsers cache previously accessed web resources and reuse them, whenever possible, to reduce network traffic. HTTP proxy servers at private network boundaries can facilitate communication for clients without a globally routable address, by relaying messages with external servers.
+To allow intermediate HTTP nodes (proxy servers, web caches, etc.) to accomplish their functions, some of the HTTP headers (found in HTTP requests/responses) are managed hop-by-hop whereas other HTTP headers are managed end-to-end (managed only by the source client and by the target web server).
+A web resource is located by a uniform resource locator (URL), using the Uniform Resource Identifier (URI) schemes http and https. URIs are encoded as hyperlinks in HTML documents, so as to form interlinked hypertext documents.
+
+
+Versions
+
+The protocol has been revised over time. A version is identified as HTTP/# where # is the version number. This article covers aspects of all versions but provides primary coverage for HTTP/0.9, HTTP/1.0, and HTTP/1.1. Separate articles cover HTTP/2 and HTTP/3 in detail.
+
+In HTTP/1.0, a separate TCP connection to the same server is made for every resource request.
+In HTTP/1.1, instead a TCP connection can be reused to make multiple resource requests (i.e. of HTML pages, frames, images, scripts, stylesheets, etc.). HTTP/1.1 communications therefore experience less latency as the establishment of TCP connections presents considerable overhead, especially under high traffic conditions.
+Enhancements added with HTTP/2 allow for less latency and, in most cases, higher speeds than HTTP/1.1 communications. HTTP/2 adds support for:
+
+a compressed binary representation of metadata (HTTP headers) instead of a textual one, so that headers require much less space;
+a single TCP/IP (usually encrypted) connection per accessed server domain instead of 2 to 8 TCP/IP connections;
+one or more bidirectional streams per TCP/IP connection in which HTTP requests and responses are broken down and transmitted in small packets to almost solve the problem of the HOLB (head-of-line blocking);
+a push capability to allow server application to send data to clients whenever new data is available (without forcing clients to request periodically new data to server by using polling methods).
+HTTP/3 uses QUIC + UDP transport protocols instead of TCP. Only the IP layer is used (which UDP, like TCP, builds on). This slightly improves the average speed of communications and avoids the occasional problem of TCP connection congestion that can temporarily block or slow down the data flow of all its streams (another form of "head of line blocking").
+
+
+Use
+HTTP/2 is supported by 71% of websites (34.1% HTTP/2 + 36.9% HTTP/3 with backwards compatibility) and supported by almost all web browsers (over 98% of users). It is also supported by major web servers over Transport Layer Security (TLS) using an Application-Layer Protocol Negotiation (ALPN) extension where TLS 1.2 or newer is required.
+HTTP/3 is used on 36.9% of websites and is supported by most web browsers, i.e. (at least partially) supported by 97% of users. HTTP/3 uses QUIC instead of TCP for the underlying transport protocol. Like HTTP/2, it does not obsolete previous major versions of the protocol. In 2019, support for HTTP/3 was first added to Cloudflare and Chrome and also enabled in Firefox. HTTP/3 has lower latency for real-world web pages and loads faster than HTTP/2, in some cases over three times faster than HTTP/1.1, which is still commonly the only protocol enabled.
+HTTPS, the secure variant of HTTP, is used by more than 85% of websites.
+
+
+Technology
+
+
+Transport layer
+HTTP presumes an underlying and reliable transport layer protocol. The standard choice of the underlying protocol prior to HTTP/3 is Transmission Control Protocol (TCP). HTTP/3 uses a different transport layer called QUIC, which provides reliability on top of the unreliable User Datagram Protocol (UDP). HTTP/1.1 and earlier have been adapted to be used over plain unreliable UDP in multicast and unicast situations, forming HTTPMU and HTTPU. They are used in UPnP and Simple Service Discovery Protocol (SSDP), two protocols usually run on a local area network.
+
+
+Data exchange
+HTTP is a stateless application-level protocol and it requires a reliable network transport connection to exchange data between client and server. In HTTP implementations, TCP/IP connections are used using well-known ports (typically port 80 if the connection is unencrypted or port 443 if the connection is encrypted, see also List of TCP and UDP port numbers). In HTTP/2, a TCP/IP connection plus multiple protocol channels are used. In HTTP/3, the application transport protocol QUIC over UDP is used.
+
+
+Request and response messages through connections
+Data is exchanged through a sequence of request–response messages which are exchanged by a session layer transport connection. An HTTP client initially tries to establish a connection, real or virtual, with a server. An HTTP server listening on the port accepts the connection and then waits for a client's request message. The client sends its HTTP request message. Upon receiving the request the server sends back an HTTP response message, which includes header(s) plus a body if it is required. The body of this response message is typically the requested resource, although an error message or other information may also be returned. At any time and for many reasons, either the client or server can close the connection. Closing a connection is usually advertised by one or more HTTP headers in the last request or response.
+
+
+Persistent connections
+
+In HTTP/0.9, the TCP/IP connection is always closed after server response has been sent, so it is never persistent.
+In HTTP/1.0, the TCP/IP connection should always be closed by server after a response has been sent.
+In HTTP/1.1, a keep-alive-mechanism was officially introduced so that a connection could be reused for more than one request/response. Such persistent connections reduce request latency perceptibly because the client does not need to re-negotiate the TCP 3-Way-Handshake connection after the first request has been sent. Another positive side effect is that, in general, the connection becomes faster with time due to TCP's slow-start-mechanism.
+HTTP/1.1 added also HTTP pipelining in order to further reduce lag time when using persistent connections by allowing clients to send multiple requests before waiting for each response.  This optimization was never considered really safe because a few web servers and many proxy servers, specially transparent proxy servers placed in Internet / Intranets between clients and servers, did not handle pipelined requests properly (they served only the first request discarding the others, they closed the connection because they saw more data after the first request or some proxies even returned responses out of order etc.).  Because of this, only HEAD and some GET requests (i.e. limited to real file requests and so with URLs without query string used as a command, etc.) could be pipelined in a safe and idempotent mode.  After many years of struggling with the problems introduced by enabling pipelining, this feature was first disabled and then removed from most browsers also because of the announced adoption of HTTP/2.
+HTTP/2 extended the usage of persistent connections by multiplexing many concurrent requests/responses through a single TCP/IP connection.
+HTTP/3 does not use TCP/IP connections but QUIC + UDP.
+
+
+Content retrieval optimizations
+In HTTP/0.9, a requested resource was always sent in its entirety.
+HTTP/1.0 added headers to manage resources cached by a client in order to allow conditional GET requests.
+
+A server must return the entire content of the requested resource only if its last modified time is not known by the client or if it changed since the last full response to a GET request.
+Header Content-Encoding was added to specify whether the returned content is compressed.
+If the size of the content is not known in advance (i.e. because it is dynamically generated) then the header Content-Length would not be included. The client would assume that transfer was complete when the connection closed, but a premature close would leave the client with partial content yet the client would not know it's partial.
+HTTP/1.1 introduced and later versions provide:
+
+Headers to better manage the conditional retrieval of cached resources.
+Chunked transfer encoding allows content to be streamed in chunks in order to reliably send it even when the server does not know its length in advance (i.e. because it is dynamically generated, etc.).
+Byte range serving allows a client to request portions (ranges of bytes) of a resource. This is useful to resume an interrupted download (when a file is very large), when only a part of a content has to be shown or dynamically added to the already visible part by a browser (i.e. only the first or the following n comments of a web page) in order to spare time, bandwidth and system resources, etc.
+
+
+Application session
+As a stateless protocol, HTTP does not require the web server to retain information or status about each user for the duration of multiple requests. If a web application needs an application session, it implements it via HTTP cookies, hidden variables in a web form or another mechanism.
+Typically, to start a session, an interactive login is performed, and to end a session, a logout is requested by the user. These kind of operations use a custom authentication mechanism, not HTTP authentication.
+
+
+Authentication
+HTTP provides multiple authentication schemes such as basic access authentication and digest access authentication which operate via a challenge–response mechanism whereby the server identifies and issues a challenge before serving the requested content.
+HTTP provides a general framework for access control and authentication, via an extensible set of challenge–response authentication schemes, which can be used by a server to challenge a client request and by a client to provide authentication information.
+The authentication mechanisms described above belong to the HTTP protocol and are managed by client and server HTTP software (if configured to require authentication before allowing client access to one or more web resources), and not by the web applications using an application session.
+The HTTP authentication specification includes realms that provide an arbitrary, implementation-specific construct for further dividing resources common to a given root URI. The realm value string, if prese
+
+[内容截取，完整内容请查阅 Wikipedia]

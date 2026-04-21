@@ -1,13 +1,26 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { listSessions } from '@/api/chat'
 
 const useStore = create(
   persist(
     (set) => ({
       user: null,
       theme: 'light',
+      sessions: [],
+      currentSessionId: null,
       setUser: (user) => set({ user }),
-      clearUser: () => set({ user: null }),
+      clearUser: () => set({ user: null, sessions: [], currentSessionId: null }),
+      setSessions: (sessions) => set({ sessions }),
+      setCurrentSessionId: (currentSessionId) => set({ currentSessionId }),
+      loadSessions: async () => {
+        try {
+          const res = await listSessions()
+          if (res.data?.success) {
+            set({ sessions: res.data.data || [] })
+          }
+        } catch (_) {}
+      },
       setTheme: (theme) => {
         set({ theme })
         if (theme === 'dark') {

@@ -22,10 +22,11 @@ export const clearSessions = () =>
  * Open an SSE connection for streaming AI responses (text-only).
  * Returns an EventSource instance.
  */
-export const streamAsk = (question, sessionId, deepThink = false) => {
+export const streamAsk = (question, sessionId, deepThink = false, webSearch = false) => {
   const params = new URLSearchParams({ question })
   if (sessionId) params.append('sessionId', sessionId)
   if (deepThink) params.append('deepThink', 'true')
+  if (webSearch) params.append('webSearch', 'true')
   return new EventSource(`/api/chat/stream?${params.toString()}`, {
     withCredentials: true,
   })
@@ -43,7 +44,7 @@ export const streamAsk = (question, sessionId, deepThink = false) => {
  * @param {boolean} deepThink    是否开启深度思考
  * @param {{ onMeta, onChunk, onDone, onError }} callbacks
  */
-export const streamAskWithImage = (question, sessionId, imageBase64, mimeType, deepThink, callbacks) => {
+export const streamAskWithImage = (question, sessionId, imageBase64, mimeType, deepThink, webSearch, callbacks) => {
   const controller = new AbortController()
 
   fetch('/api/chat/stream-vision', {
@@ -51,7 +52,7 @@ export const streamAskWithImage = (question, sessionId, imageBase64, mimeType, d
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     signal: controller.signal,
-    body: JSON.stringify({ question, sessionId, imageBase64, mimeType, deepThink }),
+    body: JSON.stringify({ question, sessionId, imageBase64, mimeType, deepThink, webSearch }),
   }).then(async (res) => {
     if (!res.ok) {
       callbacks.onError?.(`HTTP ${res.status}`)

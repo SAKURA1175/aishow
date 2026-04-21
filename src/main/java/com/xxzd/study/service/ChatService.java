@@ -25,9 +25,9 @@ public interface ChatService {
     String getAiAnswerWithImage(User user, String prompt, Long sessionId,
                                 String imageBase64, String mimeType);
 
-    reactor.core.publisher.Flux<String> streamAiAnswer(User user, String prompt, Long sessionId, boolean deepThink);
+    reactor.core.publisher.Flux<String> streamAiAnswer(User user, String prompt, Long sessionId, boolean deepThink, boolean webSearch);
 
     reactor.core.publisher.Flux<String> streamAiAnswerWithImage(User user, String prompt, Long sessionId,
-                                                                String imageBase64, String mimeType, boolean deepThink);
+                                                                String imageBase64, String mimeType, boolean deepThink, boolean webSearch);
 }
 

@@ -1,0 +1,85 @@
+# REST
+
+REST (Representational State Transfer) is a software architectural style that was created to describe the design and guide the development of the architecture for the World Wide Web. REST defines a set of constraints for how the architecture of a distributed, Internet-scale hypermedia system, such as the Web, should behave. The REST architectural style emphasizes uniform interfaces, independent deployment of components, the scalability of interactions between them, and creating a layered architecture to promote caching to reduce user-perceived latency, enforce security, and encapsulate legacy systems.
+REST has been employed throughout the software industry to create stateless, reliable, web-based applications.  An application that adheres to the REST architectural constraints may be informally described as RESTful, although this term is more commonly associated with the design of HTTP-based APIs and what are widely considered best practices regarding the "verbs" (HTTP methods) a resource responds to, while having little to do with REST as originally formulated—and is often even at odds with the concept.
+
+
+Principle
+The term representational state transfer was introduced and defined in 2000 by computer scientist Roy Fielding in his doctoral dissertation. It means that a server will respond with the representation of a resource (today, it will most often be an HTML document) and that resource will contain hypermedia links that can be followed to make the state of the system change. Any such request will in turn receive the representation of a resource, and so on.
+An important consequence is that the only identifier that needs to be known is the identifier of the first resource requested, and all other identifiers will be discovered. This means that those identifiers can change without the need to inform the client beforehand and that client and server must be inherently loosely coupled.
+
+
+History
+
+The Web began to enter everyday use in 1993–1994, when websites for general use started to become available. At the time, only a fragmented description existed of the Web's architecture, and there was pressure within the community to agree on a standard for the Web interface protocols. For instance, several experimental extensions had been added to the communication protocol (HTTP) to support proxies, and more extensions were being proposed, but there was a need for a formal Web architecture with which to evaluate the impact of these changes.
+The W3C and IETF working groups together started work on creating formal descriptions of the Web's three primary standards: URI, HTTP, and HTML. Roy Fielding was involved in the creation of these standards (specifically HTTP 1.0 and 1.1, and URI), and during the next six years he created the REST architectural style, testing its constraints on the Web's  protocol standards and using it as a means to define architectural improvements — and to identify architectural mismatches. Fielding defined REST in his 2000 PhD dissertation "Architectural Styles and the Design of Network-based Software Architectures" at UC Irvine.
+To create the REST architectural style, Fielding identified the requirements that apply when creating a world-wide network-based application, such as the need for a low entry barrier to enable global adoption. He also surveyed many existing architectural styles for network-based applications, identifying which features are shared with other styles, such as caching and client–server features, and those which are unique to REST, such as the concept of resources. Fielding was trying to both categorise the existing architecture of the current implementation and identify which aspects should be considered central to the behavioural and performance requirements of the Web.
+By their nature, architectural styles are independent of any specific implementation, and while REST was created as part of the development of the Web standards, the implementation of the Web does not obey every constraint in the REST architectural style. Mismatches can occur due to ignorance or oversight, but the existence of the REST architectural style means that they can be identified before they become standardised. For example, Fielding identified the embedding of session information in URIs as a violation of the constraints of REST which can negatively affect shared caching and server scalability. HTTP cookies also violate REST constraints because they can become out of sync with the browser's application state, making them unreliable; they also contain opaque data that can be a concern for privacy and security.
+
+
+Architectural properties
+The REST architectural style is designed for network-based applications, specifically client-server applications. But more than that, it is designed for Internet-scale usage, so the coupling between the user agent (client) and the origin server must be as loose as possible to facilitate large-scale adoption.
+The strong decoupling of client and server together with the text-based transfer of information using a uniform addressing protocol provided the basis for meeting the requirements of the Web: extensibility, anarchic scalability and independent deployment of components, large-grain data transfer, and a low entry-barrier for content readers, content authors and developers.
+
+The constraints of the REST architectural style affect the following architectural properties:
+
+Performance in component interactions, which can be the dominant factor in user-perceived performance and network efficiency;
+Scalability allowing the support of large numbers of components and interactions among components;
+Simplicity of a uniform interface;
+Modifiability (a.k.a. Extensibility) of components to meet changing needs (even while the application is running);
+Visibility of communication between components by service agents;
+Portability of components by moving program code with the data;
+Reliability in the resistance to failure at the system level in the presence of failures within components, connectors, or data.
+
+
+Architectural constraints
+The REST architectural style defines six guiding constraints. When these constraints are applied to the system architecture, it gains desirable non-functional properties, such as performance, scalability, simplicity, modifiability, visibility, portability, and reliability.
+The formal REST constraints are as follows:
+
+Client/Server – Clients are separated from servers by a well-defined interface
+Stateless – A specific client does not consume server storage when the client is "at rest"
+Cache – Responses indicate their own cacheability
+Uniform interface
+Layered system – A client cannot ordinarily tell whether it is connected directly to the end server, or to an intermediary along the way
+Code on demand (optional) – Servers are able to temporarily extend or customize the functionality of a client by transferring logic to the client that can be executed within a standard virtual machine
+
+
+Uniform interface
+The uniform interface constraint is fundamental to the design of any RESTful system. It simplifies and decouples the architecture, which enables each part to evolve independently. The four constraints for this uniform interface are:
+
+Resource identification in requests: Individual resources are identified in requests using URIs. The resources themselves are conceptually separate from the representations that are returned to the client. For example, the server could send data from its database as HTML, XML or as JSON—none of which are the server's internal representation.
+Resource manipulation through representations: When a client holds a representation of a resource, including any metadata attached, it has enough information to modify or delete the resource's state.
+Self-descriptive messages: Each message includes enough information to describe how to process the message. For example, which parser to invoke can be specified by a media type.
+Hypermedia as the engine of application state (HATEOAS) – Having accessed an initial URI for the REST application—analogous to a human Web user accessing the home page of a website—a REST client should then be able to use server-provided links dynamically to discover all the available resources it needs. As access proceeds, the server responds with text that includes hyperlinks to other resources that are currently available. There is no need for the client to be hard-coded with information regarding the structure of the server.
+
+
+Classification models
+Several models have been developed to help classify HTTP APIs according to their adherence to various principles of REST design, such as
+
+the Richardson Maturity Model
+the Classification of HTTP-based APIs
+the W S3 maturity model
+
+
+See also
+Clean URL – URL intended to improve the usability of a website
+Content delivery network – Internet ecosystem layer that addresses bottlenecks
+Domain application protocol (DAP)
+List of URI schemes – Namespace identifier assigned by IANA
+Microservices – Collection of loosely coupled services used to build computer applications
+Overview of RESTful API Description Languages – Descriptions of computer languages
+Resource-oriented architecture – Architectural pattern in software design
+Resource-oriented computing – Architectural pattern in software design
+Service-oriented architecture – Architectural pattern in software design
+Web-oriented architecture – Architectural pattern in software design
+Web service – Service offered between electronic devices via the Internet
+
+
+References
+
+
+Further reading
+Pautasso, Cesare; Wilde, Erik; Alarcon, Rosa (2014), REST: Advanced Research Topics and Practical Applications, Springer, ISBN 9781461492986
+Pautasso, Cesare; Zimmermann, Olaf; Leymann, Frank (April 2008), "Restful web services vs. "big"' web services", Proceedings of the 17th international conference on World Wide Web, pp. 805–814, doi:10.1145/1367497.1367606, ISBN 9781605580852, S2CID 207167438
+Ferreira, Otavio (Nov 2009), Semantic Web Services: A RESTful Approach, IADIS, ISBN 978-972-8924-93-5
+Fowler, Martin (2010-03-18). "Richardson Maturity Model: steps towards the glory of REST". martinfowler.com. Retrieved 2017-06-26.

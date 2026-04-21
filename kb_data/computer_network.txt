@@ -1,0 +1,66 @@
+# Computer network
+
+In computer science, computer engineering, and telecommunications, a network is a group of communicating computers and peripherals known as hosts, which communicate data to other hosts via communication protocols, as facilitated by networking hardware.
+Within a computer network, hosts are identified by network addresses, which allow networking hardware to locate and identify hosts. Hosts may also have hostnames, memorable labels for the host nodes, which can be mapped to a network address using a hosts file or a name server such as Domain Name Service. The physical medium that supports information exchange includes wired media like copper cables, optical fibers, and wireless radio-frequency media. The arrangement of hosts and hardware within a network architecture is known as the network topology.
+The first computer network was created in 1940 when George Stibitz connected a terminal at Dartmouth to his Complex Number Calculator at Bell Labs in New York. Today, almost all computers are connected to a computer network, such as the global Internet or embedded networks such as those found in many modern electronic devices. Many applications have only limited functionality unless they are connected to a network. Networks support applications and services, such as access to the World Wide Web, digital video and audio, application and storage servers, printers, and email and instant messaging applications.
+
+
+History
+
+
+Early origins (1940 – 1960s)
+In 1940, George Stibitz of Bell Labs connected a teletype at Dartmouth to a Bell Labs computer running his Complex Number Calculator to demonstrate the use of computers at long distance. This was the first real-time, remote use of a computing machine.
+In the late 1950s, a network of computers was built for the U.S. military Semi-Automatic Ground Environment (SAGE) radar system using the Bell 101 modem. It was the first commercial modem for computers, released by AT&T Corporation in 1958. The modem allowed digital data to be transmitted over regular unconditioned telephone lines at a speed of 110 bits per second (bit/s). In 1959, Christopher Strachey filed a patent application for time-sharing in the United Kingdom and John McCarthy initiated the first project to implement time-sharing of user programs at MIT. Strachey passed the concept on to J. C. R. Licklider at the inaugural UNESCO Information Processing Conference in Paris that year. McCarthy was instrumental in the creation of three of the earliest time-sharing systems (the Compatible Time-Sharing System in 1961, the BBN Time-Sharing System in 1962, and the Dartmouth Time-Sharing System in 1963).
+In 1959, Anatoly Kitov proposed to the Central Committee of the Communist Party of the Soviet Union a detailed plan for the re-organization of the control of the Soviet armed forces and of the Soviet economy on the basis of a network of computing centers. Kitov's proposal was rejected, as later was the 1962 OGAS economy management network project.
+During the 1960s, Paul Baran and Donald Davies independently invented the concept of packet switching for data communication between computers over a network. Baran's work addressed adaptive routing of message blocks across a distributed network, but did not include routers with software switches, nor the idea that users, rather than the network itself, would provide the reliability. Davies' hierarchical network design included high-speed routers, communication protocols and the essence of the end-to-end principle. The NPL network, a local area network at the National Physical Laboratory (United Kingdom), pioneered the implementation of the concept in 1968-69 using 768 kbit/s links. Both Baran's and Davies' inventions were seminal contributions that influenced the development of computer networks.
+
+
+ARPANET (1969 – 1974)
+In 1962 and 1963, J. C. R. Licklider sent a series of memos to office colleagues discussing the concept of the "Intergalactic Computer Network", a computer network intended to allow general communications among computer users. This ultimately became the basis for the ARPANET, which began in 1969. That year, the first four nodes of the ARPANET were connected using 50 kbit/s circuits between the University of California at Los Angeles, the Stanford Research Institute, the University of California, Santa Barbara, and the University of Utah. Designed principally by Bob Kahn, the network's routing, flow control, software design and network control were developed by the IMP team working for Bolt Beranek & Newman. In the early 1970s, Leonard Kleinrock carried out mathematical work to model the performance of packet-switched networks, which underpinned the development of the ARPANET. His theoretical work on hierarchical routing in the late 1970s with student Farouk Kamoun remains critical to the operation of the Internet today.
+In 1973, Peter Kirstein put internetworking into practice at University College London (UCL), connecting the ARPANET to British academic networks, the first international heterogeneous computer network. That same year, Robert Metcalfe wrote a formal memo at Xerox PARC describing Ethernet, a local area networking system he created with David Boggs. It was inspired by the packet radio ALOHAnet, started by Norman Abramson and Franklin Kuo at the University of Hawaii in the late 1960s. Metcalfe and Boggs, with John Shoch and Edward Taft, also developed the PARC Universal Packet for internetworking. That year, the French CYCLADES network, directed by Louis Pouzin was the first to make the hosts responsible for the reliable delivery of data, rather than this being a centralized service of the network itself.
+
+
+The internet (1974 – present)
+In 1974, Vint Cerf and Bob Kahn published their seminal 1974 paper on internetworking, A Protocol for Packet Network Intercommunication. Later that year, Cerf, Yogen Dalal, and Carl Sunshine wrote the first Transmission Control Protocol (TCP) specification, RFC 675, coining the term Internet as a shorthand for internetworking. In July 1976, Metcalfe and Boggs published their paper "Ethernet: Distributed Packet Switching for Local Computer Networks" and in December 1977, together with Butler Lampson and Charles P. Thacker, they received U.S. patent 4063220A for their invention.
+In 1976, John Murphy of Datapoint Corporation created ARCNET, a token-passing network first used to share storage devices. In 1979, Robert Metcalfe pursued making Ethernet an open standard. In 1980, Ethernet was upgraded from the original 2.94 Mbit/s protocol to the 10 Mbit/s protocol, which was developed by Ron Crane, Bob Garner, Roy Ogus, Hal Murray, Dave Redell and Yogen Dalal. In 1986, the National Science Foundation (NSF) launched the National Science Foundation Network (NSFNET) as a general-purpose research network connecting various NSF-funded sites to each other and to regional research and education networks.
+In 1995, the transmission speed capacity for Ethernet increased from 10 Mbit/s to 100 Mbit/s. By 1998, Ethernet supported transmission speeds of 1 Gbit/s. Subsequently, higher speeds of up to 800 Gbit/s were added (as of 2025). The scaling of Ethernet has been a contributing factor to its continued use. In the 1980s and 1990s, as embedded systems were becoming increasingly important in factories, cars, and airplanes, network protocols were developed to allow the embedded computers to communicate. In the late 1990s and 2000s, ubiquitous computing and an Internet of Things became popular.
+
+
+Commercial usage
+In 1960, the commercial airline reservation system semi-automatic business research environment (SABRE) went online with two connected mainframes. In 1965, Western Electric introduced the first widely used telephone switch that implemented computer control in the switching fabric. In 1972, commercial services were first deployed on experimental public data networks in Europe. Public data networks in Europe, North America and Japan began using X.25 in the late 1970s and interconnected with X.75. This underlying infrastructure was used for expanding TCP/IP networks in the 1980s. In 1977, the first long-distance fiber network was deployed by GTE in Long Beach, California.
+
+
+Hardware
+
+
+Network links
+
+The transmission media used to link devices to form a computer network include electrical cable, optical fiber, and free space. In the OSI model, the software to handle the media is defined at layers 1 and 2 — the physical layer and the data link layer. Common examples of networking technologies include:
+
+Ethernet is a widely adopted family of networking technologies that use copper and fiber media in local area networks (LAN). The media and protocol standards that enable communication between networked devices over Ethernet are defined by IEEE 802.3.
+Wireless LAN standards, which use radio waves. Some standards use infrared signals as a transmission medium.
+Power line communication uses a building's power cabling to transmit data.
+
+
+Wired
+
+The following classes of wired technologies are used in computer networking.
+
+Coaxial cable is widely used for cable television systems, office buildings, and other work-sites for local area networks. Transmission speed ranges from 200 million bits per second to more than 500 million bits per second.
+ITU-T G.hn technology uses existing home wiring (coaxial cable, phone lines and power lines) to create a high-speed local area network.
+Twisted pair cabling is used for wired Ethernet and other standards. It typically consists of 4 pairs of copper cabling that can be utilized for both voice and data transmission. The use of two wires twisted together helps to reduce crosstalk and electromagnetic induction. The transmission speed ranges from 2 Mbit/s to 10 Gbit/s. Twisted pair cabling comes in two forms: unshielded twisted pair (UTP) and shielded twisted-pair (STP). Each form comes in several category ratings, designed for use in various scenarios.
+
+An optical fiber is a glass fiber that carries pulses of light that represent data via lasers and optical amplifiers. Some advantages of optical fibers over metal wires are very low transmission loss and immunity to electrical interference. Using dense wave division multiplexing, optical fibers can simultaneously carry multiple streams of data on different wavelengths of light, which greatly increases the rate that data can be sent to up to trillions of bits per second. Optic fibers can be used for long runs of cable carrying very high data rates, and are used for undersea communications cables to interconnect continents. There are two basic types of fiber optics, single-mode optical fiber (SMF) and multi-mode optical fiber (MMF).
+
+
+Wireless
+
+Network connections can be established wirelessly using radio or other electromagnetic means of communication.
+
+ Terrestrial microwave – Terrestrial microwave communication uses Earth-based transmitters and receivers resembling satellite dishes. Terrestrial microwaves are in the low gigahertz range, which limits all communications to line-of-sight. Relay stations are spaced approximately 40 miles (64 km) apart.
+Communications satellites – Satellites also communicate via microwave. The satellites are stationed in space, typically in geosynchronous orbit 35,400 km (22,000 mi) above the equator. These Earth-orbiting systems are capable of receiving and relaying voice, data, and TV signals.
+Cellular networks use several radio communications technologies. The systems divide the region covered into multiple geographic areas. Each area is served by a low-power transceiver.
+Radio and spread spectrum technologies – Wireless LANs use a high-frequency radio technology similar to digital cellular. Wireless LANs use spread spectrum technology to enable communication between multiple devices in a limited area. IEEE 802.11 defines a common flavor of open-standards wireless radio-wave technology known as Wi-Fi.
+Free-space optical communication uses visible or invisible light for communications. In most 
+
+[内容截取，完整内容请查阅 Wikipedia]

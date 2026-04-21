@@ -1,5 +1,6 @@
 package com.xxzd.study.ai;
 
+import com.xxzd.study.config.properties.AiProperties;
 import com.xxzd.study.domain.DocumentChunk;
 import com.xxzd.study.mapper.DocumentChunkMapper;
 import jakarta.annotation.Resource;
@@ -29,6 +30,9 @@ public class VectorRagService {
 
     @Resource
     private DocumentChunkMapper documentChunkMapper;
+
+    @Resource
+    private AiProperties aiProperties;
 
     /**
      * 语义检索：找出与 query 最相似的 Top-K 文档片段
@@ -71,7 +75,10 @@ public class VectorRagService {
         }
 
         // 3. 降级：MySQL 全量余弦相似度
-        return fallback.search(queryVec, topK);
+        int maxScanRows = aiProperties.getRag() != null
+                ? aiProperties.getRag().getMaxFallbackScanRows()
+                : 2000;
+        return fallback.search(queryVec, topK, maxScanRows);
     }
 
     /**

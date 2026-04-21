@@ -40,4 +40,9 @@
         FROM document_embedding
     </select>
 
+    <select id="countAll" resultType="int">
+        SELECT COUNT(1)
+        FROM document_embedding
+    </select>
+
 </mapper>

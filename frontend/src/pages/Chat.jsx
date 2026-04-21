@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, Plus, Trash2, MessageSquare, Menu, Paperclip, X, Image } from 'lucide-react'
+import { Send, Plus, Trash2, MessageSquare, Menu, Paperclip, X, Image, PanelLeftClose, PanelLeftOpen, BookOpen, ExternalLink, ChevronDown, ChevronUp, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import {
-  listSessions, listMessages, newSession,
-  clearSessions, streamAsk, streamAskWithImage,
-} from '@/api/chat'
+import { listMessages, streamAsk, streamAskWithImage } from '@/api/chat'
 import useStore from '@/store/useStore'
 import { cn } from '@/lib/utils'
 import BrandLogo from '@/components/BrandLogo'
+import { useOutletContext } from 'react-router-dom'
 
 function TypingIndicator() {
   return (
@@ -30,58 +28,159 @@ function TypingIndicator() {
   )
 }
 
-function MessageBubble({ msg, isStreaming }) {
+function CitationBlock({ refs }) {
+  const [expanded, setExpanded] = useState(false)
+  if (!refs || refs.length === 0) return null
+
+  const webRefs = refs.filter(r => r.url)
+  const docRefs = refs.filter(r => !r.url)
+
+  return (
+    <div className="mt-4 pt-3 border-t border-border/40">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2 font-medium"
+      >
+        {webRefs.length > 0
+          ? <Globe className="w-3.5 h-3.5 text-blue-500" />
+          : <BookOpen className="w-3.5 h-3.5" />}
+        <span>
+          {webRefs.length > 0 ? `网页来源 · ${webRefs.length} 条` : ''}
+          {webRefs.length > 0 && docRefs.length > 0 ? ' · ' : ''}
+          {docRefs.length > 0 ? `知识库 · ${docRefs.length} 条` : ''}
+        </span>
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {expanded && (
+        <div className="space-y-2">
+          {webRefs.map((ref, i) => (
+            <a
+              key={'w' + i}
+              href={ref.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex gap-2 p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs hover:bg-blue-500/10 transition-colors group"
+            >
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/15 text-blue-500 font-bold flex items-center justify-center text-[10px]">
+                {i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground/80 truncate group-hover:text-blue-500 transition-colors">
+                  {ref.title || ref.url}
+                </p>
+                {ref.snippet && <p className="text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{ref.snippet}</p>}
+                <p className="text-muted-foreground/50 text-[10px] mt-1 truncate flex items-center gap-1">
+                  <ExternalLink className="w-2.5 h-2.5" />{ref.url}
+                </p>
+              </div>
+            </a>
+          ))}
+          {docRefs.map((ref, i) => (
+            <div
+              key={'d' + i}
+              className="flex gap-2 p-2.5 rounded-xl bg-muted/50 border border-border/30 text-xs"
+            >
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary font-bold flex items-center justify-center text-[10px]">
+                {ref.index || (i + 1)}
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground/80 truncate">{ref.docName}</p>
+                <p className="text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{ref.snippet}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SearchingIndicator() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative flex items-center justify-center w-8 h-8">
+        <BrandLogo size={28} animated={true} />
+      </div>
+      <div className="flex gap-0.5 items-center font-medium text-[13px] text-blue-500 tracking-wide">
+        <Globe className="w-3.5 h-3.5 mr-1 animate-pulse" />
+        联网搜索中
+        <span className="flex w-3 ml-0.5">
+          <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}>.</motion.span>
+          <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}>.</motion.span>
+          <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}>.</motion.span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function MessageBubble({ msg, isStreaming, refs, searchStatus }) {
   const isAi = msg.role === 'ai' || msg.role === 'assistant'
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn('flex gap-4 px-6 py-6 border-b border-border/40 transition-colors', isAi ? 'bg-muted/30' : '')}
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className={cn(
+        'flex gap-4 mb-6 group px-4',
+        !isAi && 'flex-row-reverse'
+      )}
     >
       <div className={cn(
-        'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 shadow-sm',
-        isAi ? 'bg-primary text-white' : 'bg-slate-600 text-white'
+        'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1 shadow-md border',
+        isAi ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-800 text-white border-slate-700'
       )}>
         {isAi ? 'AI' : '我'}
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className={cn(
+        'max-w-[85%] min-w-0 rounded-2xl px-5 py-4 shadow-sm border',
+        isAi 
+          ? 'bg-card border-border/60 rounded-tl-sm shadow-black/5' 
+          : 'bg-primary/5 border-primary/20 rounded-tr-sm'
+      )}>
         {/* 图片附件（仅用户消息有） */}
         {msg.imageUrl && (
           <div className="mb-3">
             <img
               src={msg.imageUrl}
               alt="上传的图片"
-              className="max-w-xs max-h-48 rounded-xl border border-border/40 object-cover shadow-sm"
+              className="max-w-sm max-h-64 rounded-xl border border-border/40 object-cover shadow-sm"
             />
           </div>
         )}
 
         {msg.content === '__thinking__' ? (
           <div className="flex items-center py-1">
-            <TypingIndicator />
+            {searchStatus ? <SearchingIndicator /> : <TypingIndicator />}
           </div>
         ) : isAi ? (
-          <MarkdownRenderer
-            content={msg.content}
-            streaming={isStreaming}
-            className="text-sm leading-relaxed"
-          />
+          <>
+            <MarkdownRenderer
+              content={msg.content}
+              streaming={isStreaming}
+              className="text-sm leading-relaxed"
+            />
+            {!isStreaming && refs && refs.length > 0 && (
+              <CitationBlock refs={refs} />
+            )}
+          </>
         ) : (
-          <p className="text-sm leading-7 whitespace-pre-wrap text-foreground/90">{msg.content}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{msg.content}</p>
         )}
       </div>
     </motion.div>
   )
 }
 
+
 export default function Chat() {
-  const user = useStore((s) => s.user)
-  const [sessions, setSessions] = useState([])
-  const [currentSessionId, setCurrentSessionId] = useState(null)
+  const { user, sessions, currentSessionId, setCurrentSessionId, loadSessions } = useStore()
   const [messagesMap, setMessagesMap] = useState({ new: [{ id: 'welcome', role: 'ai', content: '你好！我是你的学业助手，有什么可以帮你的吗？' }] })
   const [streamingSessions, setStreamingSessions] = useState({})
+  const [refsMap, setRefsMap] = useState({}) // msgId -> [{index, docId, docName, snippet}]
+  const [searchStatusMap, setSearchStatusMap] = useState({}) // sessionId -> status string
   
   const streamingSessionsRef = useRef({})
   const esRefs = useRef({})
@@ -91,8 +190,9 @@ export default function Chat() {
   const isStreaming = !!streamingSessions[activeId]
 
   const [input, setInput] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { setSidebarOpen } = useOutletContext()
   const [isDeepThink, setIsDeepThink] = useState(false)
+  const [isWebSearch, setIsWebSearch] = useState(false)
 
   // 图片附件状态
   const [pendingImage, setPendingImage] = useState(null) // { dataUrl, base64, mimeType }
@@ -106,15 +206,6 @@ export default function Chat() {
   }
 
   useEffect(() => { scrollToBottom() }, [messages])
-
-  const loadSessions = useCallback(async () => {
-    try {
-      const res = await listSessions()
-      if (res.data?.success) {
-        setSessions(res.data.data || [])
-      }
-    } catch (_) {}
-  }, [])
 
   const loadMessages = useCallback(async (sessionId) => {
     if (streamingSessionsRef.current[sessionId]) return // 正在生成时不要用后端数据覆盖前端包含动画的状态
@@ -132,10 +223,6 @@ export default function Chat() {
   }, [])
 
   useEffect(() => {
-    loadSessions()
-  }, [loadSessions])
-
-  useEffect(() => {
     if (sessions.length > 0 && !currentSessionId) {
       const latest = sessions[0]
       setCurrentSessionId(latest.id)
@@ -148,34 +235,12 @@ export default function Chat() {
     }
   }, [sessions, currentSessionId, loadMessages])
 
-  const handleSelectSession = (session) => {
-    setCurrentSessionId(session.id)
-    loadMessages(session.id)
-    setSidebarOpen(false)
-  }
-
-  const handleNewChat = async () => {
-    try {
-      const res = await newSession()
-      if (res.data?.success) {
-        const session = res.data.data
-        setSessions((prev) => [session, ...prev])
-        setCurrentSessionId(session.id)
-        setMessagesMap(prev => ({ ...prev, [session.id]: [{ id: 'welcome', role: 'ai', content: '你好！我是你的学业助手，有什么可以帮你的吗？' }] }))
-      }
-    } catch (_) {}
-    setSidebarOpen(false)
-  }
-
-  const handleClearAll = async () => {
-    if (!window.confirm('确定要清空所有聊天记录吗？')) return
-    try {
-      await clearSessions()
-      setSessions([])
-      setCurrentSessionId(null)
-      setMessagesMap({ new: [{ id: 'welcome', role: 'ai', content: '你好！我是你的学业助手，有什么可以帮你的吗？' }] })
-    } catch (_) {}
-  }
+  // 当外部 currentSessionId 改变时加载消息
+  useEffect(() => {
+    if (currentSessionId && !messagesMap[currentSessionId]) {
+      loadMessages(currentSessionId)
+    }
+  }, [currentSessionId, loadMessages, messagesMap])
 
   // ── 图片选择 ───────────────────────────────────────────────────────────────
   const handleImageSelect = (e) => {
@@ -281,9 +346,10 @@ export default function Chat() {
           streamActiveId = sid
           setCurrentSessionId(prev => prev === null ? sid : prev)
         }
-        setSessions((prev) => {
-          if (prev.find((s) => s.id === sid)) return prev
-          return [{ id: sid, title: displayText.slice(0, 30) }, ...prev]
+        useStore.setState(prev => {
+          const sessions = prev.sessions
+          if (sessions.find((s) => s.id === sid)) return prev
+          return { sessions: [{ id: sid, title: displayText.slice(0, 30) }, ...sessions] }
         })
       }
     }
@@ -347,20 +413,43 @@ export default function Chat() {
         capturedImage.base64,
         capturedImage.mimeType,
         isDeepThink,
+        isWebSearch,
         { onMeta: handleMeta, onChunk: handleChunk, onDone: handleDone, onError: handleError }
       )
       esRefs.current[streamActiveId] = handle
     } else {
       // 纯文字：EventSource SSE
-      const es = streamAsk(displayText, currentSessionId, isDeepThink)
+      const es = streamAsk(displayText, currentSessionId, isDeepThink, isWebSearch)
       esRefs.current[streamActiveId] = es
 
       es.addEventListener('meta', (e) => {
         try { handleMeta(JSON.parse(e.data)) } catch (_) {}
       })
+      es.addEventListener('refs', (e) => {
+        try {
+          const refs = JSON.parse(e.data)
+          setRefsMap(prev => ({ ...prev, [streamActiveId + '_pending']: refs }))
+        } catch (_) {}
+      })
+      es.addEventListener('status', (e) => {
+        setSearchStatusMap(prev => ({ ...prev, [streamActiveId]: e.data }))
+      })
       es.onmessage = (e) => {
         const data = e.data
-        if (data === '[DONE]') { es.close(); handleDone(); return }
+        if (data === '[DONE]') {
+          es.close()
+          setRefsMap(prev => {
+            const pending = prev[streamActiveId + '_pending']
+            if (!pending) return prev
+            const next = { ...prev }
+            delete next[streamActiveId + '_pending']
+            next[streamActiveId + '_latest'] = pending
+            return next
+          })
+          setSearchStatusMap(prev => { const n = {...prev}; delete n[streamActiveId]; return n })
+          handleDone()
+          return
+        }
         if (data.startsWith('[ERROR]')) { es.close(); handleError(data.replace('[ERROR] ', '')); return }
         handleChunk(data)
       }
@@ -369,6 +458,9 @@ export default function Chat() {
   }
 
   const handleKeyDown = (e) => {
+    // 忽略输入法组合期间的 Enter 键（如：拼音输入时按回车选词）
+    if (e.nativeEvent.isComposing) return
+    
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
@@ -384,78 +476,16 @@ export default function Chat() {
 
   return (
     <div className="flex h-full overflow-hidden bg-background">
-      {/* Sessions Sidebar */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-      
-      <div className={cn(
-        'flex-shrink-0 w-72 bg-slate-950 flex flex-col border-r border-white/5',
-        'fixed inset-y-0 left-0 z-30 md:relative md:flex transition-transform duration-300',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      )}>
-        <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">会话历史</span>
-        </div>
-
-        <div className="px-3 py-4">
-          <Button
-            variant="outline"
-            onClick={handleNewChat}
-            className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white gap-2 h-10 shadow-lg active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="text-sm">开启新对话</span>
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 space-y-1 custom-scrollbar">
-          {sessions.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => handleSelectSession(s)}
-              className={cn(
-                'w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all duration-200 truncate group flex items-center gap-2.5',
-                currentSessionId === s.id
-                  ? 'bg-primary text-white shadow-md'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
-              )}
-            >
-              <MessageSquare className={cn("w-3.5 h-3.5 flex-shrink-0 opacity-40 group-hover:opacity-100", currentSessionId === s.id && "opacity-100")} />
-              <span className="truncate flex-1">{s.title || '无标题会话'}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="p-3 border-t border-white/5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearAll}
-            className="w-full text-red-400/50 hover:text-red-400 hover:bg-red-400/5 gap-2 text-[10px]"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            清空记录
-          </Button>
-        </div>
-      </div>
       {/* Main Chat area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Topbar */}
         <div className="flex items-center gap-3 px-6 h-14 border-b bg-background/80 backdrop-blur-xl z-10 flex-shrink-0">
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-accent md:hidden transition-colors"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            className="p-2 -ml-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <PanelLeftOpen className="w-5 h-5 hidden md:block" />
+            <Menu className="w-5 h-5 md:hidden" />
           </button>
           
           <div className="flex items-center gap-3">
@@ -475,27 +505,35 @@ export default function Chat() {
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-background to-muted/10">
-          <div className="max-w-4xl mx-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-background to-muted/20">
+          <div className="max-w-4xl mx-auto pt-8 pb-4">
             <AnimatePresence initial={false}>
-              {messages.map((msg, i) => (
-                <MessageBubble
-                  key={msg.id || i}
-                  msg={msg}
-                  isStreaming={isStreaming && msg.id === 'thinking' && msg.content !== '__thinking__'}
-                />
-              ))}
+              {messages.map((msg, i) => {
+                // 找最近一条 AI 消息的引用
+                const isLastAi = msg.role === 'ai' && i === messages.map(m => m.role).lastIndexOf('ai')
+                const refs = isLastAi ? (refsMap[activeId + '_latest'] || refsMap[activeId + '_pending']) : null
+                const searchStatus = isLastAi ? searchStatusMap[activeId] : null
+                return (
+                  <MessageBubble
+                    key={msg.id || i}
+                    msg={msg}
+                    isStreaming={isStreaming && msg.id === 'thinking' && msg.content !== '__thinking__'}
+                    refs={refs}
+                    searchStatus={searchStatus}
+                  />
+                )
+              })}
             </AnimatePresence>
             <div ref={messagesEndRef} className="h-20" />
           </div>
         </div>
 
         {/* Input area */}
-        <div className="px-4 pb-6 pt-2 bg-gradient-to-t from-background via-background to-transparent flex-shrink-0">
-          <div className="max-w-4xl mx-auto">
+        <div className="px-4 pb-8 pt-2 bg-gradient-to-t from-background via-background/95 to-transparent flex-shrink-0">
+          <div className="max-w-3xl mx-auto">
             <motion.div
               layout
-              className="relative bg-card border border-border/60 rounded-2xl p-2.5 shadow-xl shadow-black/5 focus-within:border-primary/50 transition-colors"
+              className="relative bg-card border border-border/80 rounded-3xl p-3 shadow-2xl shadow-primary/5 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all duration-300"
             >
               {/* 图片预览 */}
               <AnimatePresence>
@@ -541,10 +579,10 @@ export default function Chat() {
                 }
                 disabled={isStreaming}
                 rows={1}
-                className="flex-1 w-full bg-transparent resize-none outline-none text-sm py-2 px-3 min-h-[44px] max-h-[200px] disabled:opacity-50 placeholder:text-muted-foreground/60 leading-relaxed"
+                className="flex-1 w-full bg-transparent resize-none outline-none text-[15px] py-2 px-3 min-h-[44px] max-h-[200px] disabled:opacity-50 placeholder:text-muted-foreground/50 leading-relaxed"
                 style={{ height: '44px' }}
               />
-              <div className="flex items-center justify-between px-2 pt-1 border-t border-border/40 mt-1">
+              <div className="flex items-center justify-between px-2 pt-2 border-t border-border/40 mt-1">
                 <div className="flex items-center gap-3">
                   {/* 图片上传按钮 */}
                   <button
@@ -576,6 +614,21 @@ export default function Chat() {
                   >
                     <span className="text-[12px]">🧠</span>
                     {isDeepThink ? '深度思考开' : '深度思考关'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isStreaming}
+                    onClick={() => setIsWebSearch(!isWebSearch)}
+                    className={cn(
+                      'flex items-center gap-1.5 text-[11px] font-medium transition-colors rounded-lg px-2 py-1',
+                      isWebSearch
+                        ? 'text-blue-500 bg-blue-500/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    )}
+                    title="联网搜索"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    {isWebSearch ? '联网搜索开' : '联网搜索关'}
                   </button>
                   <span className="text-[10px] text-muted-foreground/50 font-medium ml-1">支持 Markdown</span>
                 </div>
