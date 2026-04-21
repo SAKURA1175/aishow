@@ -1,2 +1,24 @@
+# Build
 target/
+
+# IDE
+.idea/
 .vscode/
+*.iml
+
+# Runtime
+*.log
+*.cookie
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Secrets & env
+.env
+
+# Temp & personal notes
+*.html
+学习.md
+改造.md
+项目简历总结.md
