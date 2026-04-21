@@ -39,6 +39,23 @@ public class ChromaVectorStore {
         this.restTemplate = buildRestTemplate(chroma);
     }
 
+    /** 返回一个使用指定 collection 的视图，底层 RestTemplate 共享，不重建连接 */
+    public ChromaVectorStore withCollection(String collectionName) {
+        return new ChromaVectorStore(this.baseUrl, this.tenant, this.database,
+                collectionName, this.restTemplate);
+    }
+
+    /** 供 withCollection 使用的内部构造器 */
+    private ChromaVectorStore(String baseUrl, String tenant, String database,
+                               String collection, RestTemplate restTemplate) {
+        this.baseUrl = baseUrl;
+        this.tenant = tenant;
+        this.database = database;
+        this.collection = collection;
+        this.restTemplate = restTemplate;
+    }
+
+
     private String colBase() {
         return baseUrl + "/tenants/" + tenant + "/databases/" + database + "/collections";
     }

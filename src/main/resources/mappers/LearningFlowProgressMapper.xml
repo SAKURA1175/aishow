@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.LearningFlowProgressMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.LearningFlowProgress">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="flowType" column="flow_type"/>
+        <result property="currentStep" column="current_step"/>
+        <result property="totalSteps" column="total_steps"/>
+        <result property="stepData" column="step_data"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.LearningFlowProgress"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO learning_flow_progress
+            (user_id, flow_type, current_step, total_steps, step_data, status, create_time, update_time)
+        VALUES
+            (#{userId}, #{flowType}, #{currentStep}, #{totalSteps}, #{stepData}, #{status}, NOW(), NOW())
+    </insert>
+
+    <select id="selectByUserAndFlow" resultMap="BaseResultMap">
+        SELECT id, user_id, flow_type, current_step, total_steps, step_data, status, create_time, update_time
+        FROM learning_flow_progress
+        WHERE user_id = #{userId} AND flow_type = #{flowType}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <update id="updateProgress">
+        UPDATE learning_flow_progress
+        SET current_step = #{currentStep},
+            step_data    = #{stepData},
+            status       = #{status},
+            update_time  = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

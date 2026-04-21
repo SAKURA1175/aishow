@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.ResumeMapper">
+
+    <resultMap id="BaseResultMap" type="com.xxzd.study.domain.Resume">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="filename" column="filename"/>
+        <result property="fileType" column="file_type"/>
+        <result property="rawText" column="raw_text"/>
+        <result property="structuredJson" column="structured_json"/>
+        <result property="analysisJson" column="analysis_json"/>
+        <result property="score" column="score"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- list 不返回大字段 raw_text，节省带宽 -->
+    <resultMap id="ListResultMap" type="com.xxzd.study.domain.Resume">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="filename" column="filename"/>
+        <result property="fileType" column="file_type"/>
+        <result property="score" column="score"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.xxzd.study.domain.Resume"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume (user_id, filename, file_type, raw_text, create_time, update_time)
+        VALUES (#{userId}, #{filename}, #{fileType}, #{rawText}, NOW(), NOW())
+    </insert>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT id, user_id, filename, file_type, raw_text, structured_json, analysis_json, score, create_time, update_time
+        FROM resume
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="ListResultMap">
+        SELECT id, user_id, filename, file_type, score, create_time, update_time
+        FROM resume
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateAnalysis">
+        UPDATE resume
+        SET structured_json = #{structuredJson},
+            analysis_json   = #{analysisJson},
+            score           = #{score},
+            update_time     = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM resume WHERE id = #{id}
+    </delete>
+
+</mapper>

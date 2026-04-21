@@ -1,0 +1,52 @@
+{
+  "flowType": "resume_basics",
+  "title": "简历基础写作课",
+  "description": "从零开始，5 步打造一份让 HR 眼前一亮的技术简历",
+  "totalSteps": 5,
+  "steps": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "目标岗位定位",
+      "instruction": "首先明确你的求职方向。\n\n请回答：你期望应聘什么岗位？（例如：Java 后端开发、前端工程师、算法工程师）",
+      "hint": "明确目标岗位有助于我们后续针对性地优化简历内容",
+      "evalPrompt": "用户想应聘的岗位是：{answer}。请评估：1) 描述是否清晰具体；2) 给出 1-2 条岗位定位建议。50字以内，口语化，鼓励为主。"
+    },
+    {
+      "id": 2,
+      "type": "choice",
+      "title": "教育背景检测",
+      "instruction": "你的最高学历是？",
+      "choices": [
+        {"label": "🎓 本科（211/985）", "value": "bachelor_985"},
+        {"label": "🎓 本科（普通院校）", "value": "bachelor_normal"},
+        {"label": "🎓 专科", "value": "associate"},
+        {"label": "🎓 硕士及以上", "value": "master_plus"}
+      ],
+      "evalPrompt": "用户的学历是：{answer}。请给出针对该学历背景的简历写作建议，重点是如何扬长避短，50字以内。"
+    },
+    {
+      "id": 3,
+      "type": "text",
+      "title": "项目经历（STAR 法则）",
+      "instruction": "项目经历是技术简历最重要的部分。\n\n请用 **STAR 法则** 描述你最亮点的一个项目：\n\n- 🔹 **S (Situation)** 项目背景：什么场景下做的？\n- 🔹 **T (Task)** 你的职责：你负责什么？\n- 🔹 **A (Action)** 具体行动：你怎么做的？用了什么技术？\n- 🔹 **R (Result)** 成果：有什么可量化的结果？",
+      "hint": "例：负责 Study AI 平台的 RAG 模块（T），基于 ChromaDB + BGE-M3 实现向量检索（A），搜索准确率提升 40%（R）",
+      "evalPrompt": "用户描述的项目经历：{answer}。请从 STAR 法则角度评估：1) 哪些要素写得好；2) 哪些要素缺失或不够具体；3) 给出一条具体的改进建议。100字以内。"
+    },
+    {
+      "id": 4,
+      "type": "text",
+      "title": "技术栈梳理",
+      "instruction": "列出你掌握的技术技能（直接用逗号分隔）\n\n例：Java, Spring Boot, React, MySQL, Redis, Docker, Git",
+      "hint": "建议按照熟练程度排列，最熟悉的放前面",
+      "evalPrompt": "用户的技术栈：{answer}。目标岗位：{targetRole}。请分析：1) 关键词是否覆盖了该岗位的常见要求；2) 有什么重要技能可以补充。50字以内。"
+    },
+    {
+      "id": 5,
+      "type": "summary",
+      "title": "简历初稿生成",
+      "instruction": "太棒了！你已经完成了所有步骤。\n\n基于你之前提供的信息，AI 现在将为你生成一份**简历优化建议报告**，包括：\n- 你的简历亮点\n- 需要改进的地方\n- 一份参考简历框架",
+      "evalPrompt": "根据用户在以下步骤中提供的信息，生成一份完整的简历优化建议报告（Markdown 格式）：\n\n目标岗位：{step1}\n学历：{step2}\n项目经历：{step3}\n技术栈：{step4}\n\n报告内容：1) 简历亮点总结；2) 三条重点改进建议；3) 推荐的简历结构框架。"
+    }
+  ]
+}

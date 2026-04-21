@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   MessageSquare, FileText, User, Clock,
-  Settings, LogOut, Moon, Sun, Plus, BookOpen, Network, Trash2, MoreHorizontal, ChevronUp
+  Settings, LogOut, Moon, Sun, Plus, BookOpen, Network, Trash2, MoreHorizontal, ChevronUp, Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import useStore from '@/store/useStore'
@@ -12,6 +12,7 @@ import { newSession, clearSessions } from '@/api/chat'
 const navItems = [
   { to: '/chat', icon: MessageSquare, label: '智能问答' },
   { to: '/documents', icon: FileText, label: '文档库' },
+  { to: '/resume', icon: Sparkles, label: '简历优化', accent: 'emerald' },
   { to: '/profile', icon: User, label: '学习画像' },
   { to: '/starmap', icon: Network, label: '知识星图' },
   { to: '/history', icon: Clock, label: '历史记录' },
@@ -139,8 +140,7 @@ export default function Sidebar() {
             <div className="px-3 py-1.5 mb-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">功能菜单</p>
             </div>
-            {navItems.map(({ to, icon: Icon, label }) => (
-              // eslint-disable-next-line no-unused-vars
+            {navItems.map(({ to, icon: Icon, label, accent }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -149,12 +149,15 @@ export default function Sidebar() {
                   cn(
                     'flex items-center gap-3 px-4 py-2 text-sm transition-colors',
                     isActive
-                      ? 'bg-primary/10 text-primary font-medium'
+                      ? accent === 'emerald'
+                        ? 'bg-emerald-500/10 text-emerald-500 font-medium'
+                        : 'bg-primary/10 text-primary font-medium'
                       : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                   )
                 }
               >
-                <Icon className="w-[16px] h-[16px] flex-shrink-0" />
+                <Icon className={cn('w-[16px] h-[16px] flex-shrink-0',
+                  accent === 'emerald' ? 'text-emerald-500' : '')} />
                 {label}
               </NavLink>
             ))}
