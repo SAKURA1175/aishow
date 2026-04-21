@@ -11,7 +11,7 @@ import re
 import time
 import http.cookiejar
 
-OUTPUT_DIR = "/Users/superserver/Desktop/work/aishow/kb_data"
+OUTPUT_DIR = "os.path.join(os.path.dirname(os.path.abspath(__file__)))"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 BACKEND = "http://localhost:8090"

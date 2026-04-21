@@ -14,7 +14,7 @@ import requests, os, time, glob, json, re
 from bs4 import BeautifulSoup
 
 BACKEND  = "http://localhost:8090"
-KB_DIR   = "/Users/superserver/Desktop/work/aishow/kb_data/official_docs"
+KB_DIR   = "os.path.join(os.path.dirname(os.path.abspath(__file__)), "official_docs")"
 BATCH    = 6
 os.makedirs(KB_DIR, exist_ok=True)
 

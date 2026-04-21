@@ -3,7 +3,7 @@
 import requests, os, time, glob, json
 
 BACKEND = "http://localhost:8090"
-KB_DIR   = "/Users/superserver/Desktop/work/aishow/kb_data"
+KB_DIR   = "os.path.join(os.path.dirname(os.path.abspath(__file__)))"
 BATCH    = 8
 
 sess = requests.Session()

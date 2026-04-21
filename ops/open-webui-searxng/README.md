@@ -11,14 +11,14 @@ This stack adds local web search to LM Studio without changing the main `aishow`
 ## Start
 
 ```bash
-cd /Users/superserver/Desktop/work/aishow/ops/open-webui-searxng
+cd ops/open-webui-searxng
 docker compose up -d
 ```
 
 ## Stop
 
 ```bash
-cd /Users/superserver/Desktop/work/aishow/ops/open-webui-searxng
+cd ops/open-webui-searxng
 docker compose down
 ```
 
