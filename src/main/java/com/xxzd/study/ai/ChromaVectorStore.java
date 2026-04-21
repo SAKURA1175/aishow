@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.xxzd.study.config.properties.AiProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ public class ChromaVectorStore {
     /** 集合 ID 缓存（懒加载） */
     private volatile String collectionId = null;
 
+    @Autowired
     public ChromaVectorStore(AiProperties aiProperties) {
         AiProperties.Chroma chroma = aiProperties != null ? aiProperties.getChroma() : null;
         this.baseUrl = trimTrailingSlash(chroma != null ? chroma.getBaseUrl() : null, "http://localhost:8000/api/v2");
