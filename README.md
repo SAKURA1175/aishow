@@ -18,8 +18,8 @@
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-[![Stars](https://img.shields.io/github/stars/YOUR_USERNAME/study-ai?style=social)](https://github.com/YOUR_USERNAME/study-ai)
-[![Forks](https://img.shields.io/github/forks/YOUR_USERNAME/study-ai?style=social)](https://github.com/YOUR_USERNAME/study-ai)
+[![Stars](https://img.shields.io/github/stars/SAKURA1175/aishow?style=social)](https://github.com/SAKURA1175/aishow)
+[![Forks](https://img.shields.io/github/forks/SAKURA1175/aishow?style=social)](https://github.com/SAKURA1175/aishow)
 
 <br/>
 
@@ -130,8 +130,8 @@ Upload an image with your question. Works with any vision-capable model (GPT-4o,
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/study-ai.git
-cd study-ai
+git clone https://github.com/SAKURA1175/aishow.git
+cd aishow
 
 # Copy the example config
 cp .env.example .env
@@ -374,8 +374,8 @@ Contributions are welcome! Please:
 ### 第一步：克隆并配置
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/study-ai.git
-cd study-ai
+git clone https://github.com/SAKURA1175/aishow.git
+cd aishow
 cp .env.example .env
 ```
 
@@ -449,7 +449,7 @@ docker-compose up -d
 ## 📁 项目结构
 
 ```
-study-ai/
+aishow/
 ├── src/                          # Spring Boot 后端
 │   └── main/java/com/xxzd/study/
 │       ├── ai/                   # AI 服务（Spring AI 封装）
@@ -495,6 +495,6 @@ study-ai/
 
 _If you find Study AI useful, please give it a ⭐ Star!_
 
-[![Star History Chart](https://api.star-history.com/svg?repos=YOUR_USERNAME/study-ai&type=Date)](https://star-history.com/#YOUR_USERNAME/study-ai&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=SAKURA1175/aishow&type=Date)](https://star-history.com/#SAKURA1175/aishow&Date)
 
 </div>
