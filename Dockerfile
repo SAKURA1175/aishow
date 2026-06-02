@@ -16,8 +16,9 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 # Copy built frontend into static resources
 COPY --from=frontend-builder /frontend/dist ./src/main/resources/static/app
-# Package the application
-RUN mvn clean package -DskipTests -o
+# Package the application. Keep this online because dependency:go-offline does
+# not reliably fetch every transitive/plugin artifact used by Spring builds.
+RUN mvn clean package -DskipTests
 
 # Stage 3: Run application
 FROM eclipse-temurin:17-jre

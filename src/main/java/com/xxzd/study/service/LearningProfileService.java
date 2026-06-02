@@ -8,6 +8,8 @@ public interface LearningProfileService {
 
     void recordQuestion(User user, String question);
 
+    void recordQuestion(User user, String question, Long sessionId);
+
     LearningProfile buildProfile(User user);
 
     /**
@@ -15,4 +17,3 @@ public interface LearningProfileService {
      */
     HierarchyNode buildHierarchy(User user);
 }
-

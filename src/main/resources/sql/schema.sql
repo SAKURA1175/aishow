@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS `user_question_log` (
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
   `question` TEXT NOT NULL COMMENT '问题内容',
   `topic` VARCHAR(128) DEFAULT NULL COMMENT '知识主题',
+  `session_id` BIGINT DEFAULT NULL COMMENT '关联 AI 对话会话',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户提问日志表';
 

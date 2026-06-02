@@ -9,16 +9,17 @@
         <result property="userId" column="user_id"/>
         <result property="question" column="question"/>
         <result property="topic" column="topic"/>
+        <result property="sessionId" column="session_id"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, question, topic, create_time
+        id, user_id, question, topic, session_id, create_time
     </sql>
 
     <insert id="insert" parameterType="com.xxzd.study.domain.UserQuestionLog" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO user_question_log (user_id, question, topic, create_time)
-        VALUES (#{userId}, #{question}, #{topic}, NOW())
+        INSERT INTO user_question_log (user_id, question, topic, session_id, create_time)
+        VALUES (#{userId}, #{question}, #{topic}, #{sessionId}, NOW())
     </insert>
 
     <select id="selectRecentByUser" resultMap="BaseResultMap">

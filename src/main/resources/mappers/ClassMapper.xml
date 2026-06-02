@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.ClassMapper">
+
+    <resultMap id="classMap" type="com.xxzd.study.domain.StudyClass">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="inviteCode" column="invite_code"/>
+        <result property="semester" column="semester"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="memberCount" column="member_count"/>
+    </resultMap>
+
+    <resultMap id="memberMap" type="com.xxzd.study.domain.ClassMember">
+        <id property="id" column="id"/>
+        <result property="classId" column="class_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="role" column="role"/>
+        <result property="joinTime" column="join_time"/>
+        <result property="username" column="username"/>
+        <result property="userRole" column="user_role"/>
+    </resultMap>
+
+    <insert id="insertClass" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO class (name, description, teacher_id, invite_code, semester, status)
+        VALUES (#{name}, #{description}, #{teacherId}, #{inviteCode}, #{semester}, #{status})
+    </insert>
+
+    <update id="updateClass">
+        UPDATE class SET name=#{name}, description=#{description}, semester=#{semester},
+        status=#{status}, update_time=NOW() WHERE id=#{id}
+    </update>
+
+    <select id="selectById" resultMap="classMap">
+        SELECT c.*, u.username AS teacher_name,
+               (SELECT COUNT(*) FROM class_member WHERE class_id=c.id) AS member_count
+        FROM class c LEFT JOIN user u ON c.teacher_id=u.id
+        WHERE c.id=#{id}
+    </select>
+
+    <select id="selectByInviteCode" resultMap="classMap">
+        SELECT c.*, u.username AS teacher_name,
+               (SELECT COUNT(*) FROM class_member WHERE class_id=c.id) AS member_count
+        FROM class c LEFT JOIN user u ON c.teacher_id=u.id
+        WHERE c.invite_code=#{inviteCode}
+    </select>
+
+    <select id="selectByTeacherId" resultMap="classMap">
+        SELECT c.*, u.username AS teacher_name,
+               (SELECT COUNT(*) FROM class_member WHERE class_id=c.id) AS member_count
+        FROM class c LEFT JOIN user u ON c.teacher_id=u.id
+        WHERE c.teacher_id=#{teacherId} ORDER BY c.create_time DESC
+    </select>
+
+    <select id="selectByUserId" resultMap="classMap">
+        SELECT c.*, u.username AS teacher_name,
+               (SELECT COUNT(*) FROM class_member WHERE class_id=c.id) AS member_count
+        FROM class c
+        LEFT JOIN user u ON c.teacher_id=u.id
+        INNER JOIN class_member cm ON cm.class_id=c.id
+        WHERE cm.user_id=#{userId} ORDER BY c.create_time DESC
+    </select>
+
+    <insert id="insertMember" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO class_member (class_id, user_id, role) VALUES (#{classId}, #{userId}, #{role})
+    </insert>
+
+    <delete id="deleteMember">
+        DELETE FROM class_member WHERE class_id=#{classId} AND user_id=#{userId}
+    </delete>
+
+    <select id="selectMember" resultMap="memberMap">
+        SELECT * FROM class_member WHERE class_id=#{classId} AND user_id=#{userId}
+    </select>
+
+    <select id="selectMembersByClassId" resultMap="memberMap">
+        SELECT cm.*, u.username, u.role AS user_role
+        FROM class_member cm LEFT JOIN user u ON cm.user_id=u.id
+        WHERE cm.class_id=#{classId} ORDER BY cm.join_time
+    </select>
+
+    <select id="countMembers" resultType="int">
+        SELECT COUNT(*) FROM class_member WHERE class_id=#{classId}
+    </select>
+</mapper>

@@ -35,6 +35,17 @@ public interface AiChatService {
                                                             String userPrompt, String imageBase64, String mimeType);
 
     /**
+     * 带工具调用的对话：AI 返回结构化的 function call 参数，而非自由文本。
+     * 比纯文本 JSON 生成快得多（受限解码 + schema 约束）。
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户提示词
+     * @param toolsJson    工具定义 JSON 字符串（OpenAI tools 格式）
+     * @return AI 返回的 function call arguments（JSON 字符串）
+     */
+    String chatWithTools(String systemPrompt, String userPrompt, String toolsJson);
+
+    /**
      * 根据第一轮问答生成简短会话标题（最多 15 字）
      */
     default String generateTitle(String question, String answer) {

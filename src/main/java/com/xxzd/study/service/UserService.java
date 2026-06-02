@@ -5,7 +5,7 @@ import com.xxzd.study.domain.User;
 public interface UserService {
 
     /**
-     * 登录（如果不存在则自动注册）
+     * 登录（如果学生账号不存在则自动注册）
      * @param username 用户名
      * @param password 密码
      * @param role 角色
@@ -23,4 +23,3 @@ public interface UserService {
      */
     User register(String username, String password, String role);
 }
-

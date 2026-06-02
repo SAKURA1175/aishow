@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `user_question_log` (
     `user_id`     BIGINT       NOT NULL                COMMENT '用户 ID',
     `question`    TEXT         NOT NULL                COMMENT '提问内容',
     `topic`       VARCHAR(50)                          COMMENT '主题分类（TopicClassifier）',
-    `session_id`  BIGINT                               COMMENT '关联会话 ID',
+    `session_id`  BIGINT                               COMMENT '关联 AI 对话会话',
     `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_user_topic` (`user_id`, `topic`)

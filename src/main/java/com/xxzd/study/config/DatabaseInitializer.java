@@ -33,6 +33,13 @@ public class DatabaseInitializer {
                 addStoredFilenameColumn(conn);
                 System.out.println("✓ 成功添加 stored_filename 列");
             }
+
+            if (tableExists(metaData, "user_question_log")
+                    && !columnExists(metaData, "user_question_log", "session_id")) {
+                System.out.println("正在添加 session_id 列到 user_question_log 表...");
+                addUserQuestionLogSessionIdColumn(conn);
+                System.out.println("✓ 成功添加 session_id 列");
+            }
             
             conn.close();
         } catch (Exception e) {
@@ -48,8 +55,22 @@ public class DatabaseInitializer {
         return exists;
     }
 
+    private boolean tableExists(DatabaseMetaData metaData, String tableName) throws Exception {
+        ResultSet rs = metaData.getTables(null, null, tableName, null);
+        boolean exists = rs.next();
+        rs.close();
+        return exists;
+    }
+
     private void addStoredFilenameColumn(Connection conn) throws Exception {
         String sql = "ALTER TABLE document ADD COLUMN `stored_filename` VARCHAR(512) COMMENT '存储的文件名' AFTER `name`";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+        }
+    }
+
+    private void addUserQuestionLogSessionIdColumn(Connection conn) throws Exception {
+        String sql = "ALTER TABLE user_question_log ADD COLUMN `session_id` BIGINT COMMENT '关联 AI 对话会话' AFTER `topic`";
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         }

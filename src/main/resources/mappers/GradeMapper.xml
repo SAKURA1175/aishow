@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.GradeMapper">
+
+    <resultMap id="courseMap" type="com.xxzd.study.domain.Course">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="credit" column="credit"/>
+        <result property="semester" column="semester"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="classId" column="class_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="className" column="class_name"/>
+    </resultMap>
+
+    <resultMap id="gradeMap" type="com.xxzd.study.domain.Grade">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="score" column="score"/>
+        <result property="gradePoint" column="grade_point"/>
+        <result property="gradeType" column="grade_type"/>
+        <result property="semester" column="semester"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
+        <result property="courseName" column="course_name"/>
+        <result property="courseCredit" column="course_credit"/>
+        <result property="studentName" column="student_name"/>
+    </resultMap>
+
+    <insert id="insertCourse" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO course (name, credit, semester, teacher_id, class_id)
+        VALUES (#{name}, #{credit}, #{semester}, #{teacherId}, #{classId})
+    </insert>
+
+    <update id="updateCourse">
+        UPDATE course SET name=#{name}, credit=#{credit}, semester=#{semester} WHERE id=#{id}
+    </update>
+
+    <select id="selectCourseById" resultMap="courseMap">
+        SELECT c.*, u.username AS teacher_name, cl.name AS class_name FROM course c
+        LEFT JOIN user u ON c.teacher_id=u.id
+        LEFT JOIN class cl ON c.class_id=cl.id
+        WHERE c.id=#{id}
+    </select>
+
+    <select id="selectCoursesByTeacher" resultMap="courseMap">
+        SELECT c.*, u.username AS teacher_name, cl.name AS class_name FROM course c
+        LEFT JOIN user u ON c.teacher_id=u.id
+        LEFT JOIN class cl ON c.class_id=cl.id
+        WHERE c.teacher_id=#{teacherId} ORDER BY c.semester DESC, c.name
+    </select>
+
+    <select id="selectCoursesByClass" resultMap="courseMap">
+        SELECT c.*, u.username AS teacher_name, cl.name AS class_name FROM course c
+        LEFT JOIN user u ON c.teacher_id=u.id
+        LEFT JOIN class cl ON c.class_id=cl.id
+        WHERE c.class_id=#{classId} ORDER BY c.semester DESC
+    </select>
+
+    <insert id="insertGrade" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO grade (user_id, course_id, score, grade_point, grade_type, semester, remark)
+        VALUES (#{userId}, #{courseId}, #{score}, #{gradePoint}, #{gradeType}, #{semester}, #{remark})
+    </insert>
+
+    <update id="updateGrade">
+        UPDATE grade SET score=#{score}, grade_point=#{gradePoint}, remark=#{remark} WHERE id=#{id}
+    </update>
+
+    <delete id="deleteGrade">
+        DELETE FROM grade WHERE id=#{id}
+    </delete>
+
+    <select id="selectGradesByUser" resultMap="gradeMap">
+        SELECT g.*, c.name AS course_name, c.credit AS course_credit
+        FROM grade g LEFT JOIN course c ON g.course_id=c.id
+        WHERE g.user_id=#{userId}
+        <if test="semester != null and semester != ''">AND g.semester=#{semester}</if>
+        ORDER BY g.semester DESC, c.name
+    </select>
+
+    <select id="selectGradesByCourse" resultMap="gradeMap">
+        SELECT g.*, u.username AS student_name, c.name AS course_name, c.credit AS course_credit
+        FROM grade g LEFT JOIN user u ON g.user_id=u.id LEFT JOIN course c ON g.course_id=c.id
+        WHERE g.course_id=#{courseId} ORDER BY g.score DESC
+    </select>
+
+    <select id="selectAllGradesForGpa" resultMap="gradeMap">
+        SELECT g.*, c.name AS course_name, c.credit AS course_credit
+        FROM grade g LEFT JOIN course c ON g.course_id=c.id
+        WHERE g.user_id=#{userId} AND g.grade_type='final'
+        ORDER BY g.semester
+    </select>
+</mapper>

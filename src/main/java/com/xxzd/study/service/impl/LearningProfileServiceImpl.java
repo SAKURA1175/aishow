@@ -30,6 +30,12 @@ public class LearningProfileServiceImpl implements LearningProfileService {
     @Override
     @Transactional
     public void recordQuestion(User user, String question) {
+        recordQuestion(user, question, null);
+    }
+
+    @Override
+    @Transactional
+    public void recordQuestion(User user, String question, Long sessionId) {
         if (user == null || question == null || question.trim().isEmpty()) {
             return;
         }
@@ -39,6 +45,7 @@ public class LearningProfileServiceImpl implements LearningProfileService {
         log.setUserId(user.getId());
         log.setQuestion(q);
         log.setTopic(topic);
+        log.setSessionId(sessionId);
         userQuestionLogMapper.insert(log);
     }
 

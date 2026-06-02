@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.TodoMapper">
+
+    <resultMap id="todoMap" type="com.xxzd.study.domain.Todo">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="priority" column="priority"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="tags" column="tags"/>
+        <result property="status" column="status"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="sourceId" column="source_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <resultMap id="eventMap" type="com.xxzd.study.domain.ScheduleEvent">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="eventType" column="event_type"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="allDay" column="all_day"/>
+        <result property="recurrence" column="recurrence"/>
+        <result property="color" column="color"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insertTodo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO todo (user_id, title, description, priority, due_date, tags, status, source_type, source_id)
+        VALUES (#{userId}, #{title}, #{description}, #{priority}, #{dueDate}, #{tags}, #{status}, #{sourceType}, #{sourceId})
+    </insert>
+
+    <update id="updateTodo">
+        UPDATE todo SET title=#{title}, description=#{description}, priority=#{priority},
+        due_date=#{dueDate}, tags=#{tags}, status=#{status}, update_time=NOW()
+        WHERE id=#{id}
+    </update>
+
+    <delete id="deleteTodo">DELETE FROM todo WHERE id=#{id}</delete>
+
+    <select id="selectTodoById" resultMap="todoMap">
+        SELECT * FROM todo WHERE id=#{id}
+    </select>
+
+    <select id="selectTodosByUser" resultMap="todoMap">
+        SELECT * FROM todo WHERE user_id=#{userId}
+        <if test="status != null and status != ''">AND status=#{status}</if>
+        ORDER BY priority ASC, due_date ASC, create_time DESC
+    </select>
+
+    <select id="countPending" resultType="int">
+        SELECT COUNT(*) FROM todo WHERE user_id=#{userId} AND status='pending'
+    </select>
+
+    <insert id="insertEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO schedule_event (user_id, title, description, event_type, start_time, end_time, all_day, recurrence, color)
+        VALUES (#{userId}, #{title}, #{description}, #{eventType}, #{startTime}, #{endTime}, #{allDay}, #{recurrence}, #{color})
+    </insert>
+
+    <update id="updateEvent">
+        UPDATE schedule_event SET title=#{title}, description=#{description}, event_type=#{eventType},
+        start_time=#{startTime}, end_time=#{endTime}, all_day=#{allDay}, color=#{color}
+        WHERE id=#{id}
+    </update>
+
+    <delete id="deleteEvent">DELETE FROM schedule_event WHERE id=#{id}</delete>
+
+    <select id="selectEventById" resultMap="eventMap">
+        SELECT * FROM schedule_event WHERE id=#{id}
+    </select>
+
+    <select id="selectEventsByUser" resultMap="eventMap">
+        SELECT * FROM schedule_event WHERE user_id=#{userId}
+        <if test="startTime != null">AND start_time &gt;= #{startTime}</if>
+        <if test="endTime != null">AND start_time &lt;= #{endTime}</if>
+        ORDER BY start_time
+    </select>
+</mapper>

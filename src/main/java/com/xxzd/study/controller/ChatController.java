@@ -85,7 +85,7 @@ public class ChatController {
         // 4. 保存 AI 的回答
         chatService.saveMessage(chatSession.getId(), "ai", answer);
         
-        learningProfileService.recordQuestion(user, content);
+        learningProfileService.recordQuestion(user, content, chatSession.getId());
         
         ChatAnswer chatAnswer = new ChatAnswer();
         chatAnswer.setAnswer(answer);
@@ -252,7 +252,7 @@ public class ChatController {
 
                         String finalAnswer = fullAnswerBuilder.toString();
                         chatService.saveMessage(sid, "ai", finalAnswer);
-                        learningProfileService.recordQuestion(user, q);
+                        learningProfileService.recordQuestion(user, q, sid);
 
                         // 异步生成标题（仅对新会话）
                         if (isFirstMessage) {

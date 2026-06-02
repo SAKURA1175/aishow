@@ -91,6 +91,38 @@ public class SpringAiChatService implements AiChatService {
         return streamPayload(buildPayload(systemPrompt, history, userPrompt, imageBase64, mimeType, true));
     }
 
+    @Override
+    public String chatWithTools(String systemPrompt, String userPrompt, String toolsJson) {
+        try {
+            ObjectNode payload = buildPayload(systemPrompt, List.of(), userPrompt, null, null, false);
+
+            // 注入 tools 定义
+            JsonNode toolsNode = objectMapper.readTree(toolsJson);
+            payload.set("tools", toolsNode);
+            // 强制 AI 必须调用工具（不允许纯文本回复）
+            payload.put("tool_choice", "required");
+
+            String body = executeJsonRequest(payload, readTimeoutMs);
+            JsonNode root = objectMapper.readTree(body);
+
+            // 解析 tool_calls 响应
+            JsonNode choices = root.path("choices");
+            if (choices.isArray() && choices.size() > 0) {
+                JsonNode message = choices.path(0).path("message");
+                JsonNode toolCalls = message.path("tool_calls");
+                if (toolCalls.isArray() && toolCalls.size() > 0) {
+                    // 返回第一个 tool call 的 arguments
+                    return toolCalls.path(0).path("function").path("arguments").asText("");
+                }
+                // 如果没有 tool_calls，回退到 content
+                return extractContent(message.path("content"));
+            }
+            return "";
+        } catch (Exception e) {
+            throw new RuntimeException("AI Tool Calling 调用失败: " + e.getMessage(), e);
+        }
+    }
+
     private Flux<String> streamPayload(ObjectNode payload) {
         return Flux.<String>create(sink -> {
             HttpURLConnection connection = null;

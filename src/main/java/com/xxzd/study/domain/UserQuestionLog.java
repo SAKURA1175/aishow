@@ -12,6 +12,8 @@ public class UserQuestionLog {
 
     private String topic;
 
+    private Long sessionId;
+
     private Date createTime;
 
     public Long getId() {
@@ -46,6 +48,14 @@ public class UserQuestionLog {
         this.topic = topic;
     }
 
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
+    }
+
     public Date getCreateTime() {
         return createTime;
     }
@@ -54,4 +64,3 @@ public class UserQuestionLog {
         this.createTime = createTime;
     }
 }
-

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxzd.study.mapper.AssignmentMapper">
+
+    <resultMap id="assignmentMap" type="com.xxzd.study.domain.Assignment">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="classId" column="class_id"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="maxScore" column="max_score"/>
+        <result property="rubric" column="rubric"/>
+        <result property="attachments" column="attachments"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="className" column="class_name"/>
+        <result property="submissionCount" column="submission_count"/>
+        <result property="gradedCount" column="graded_count"/>
+    </resultMap>
+
+    <resultMap id="submissionMap" type="com.xxzd.study.domain.AssignmentSubmission">
+        <id property="id" column="id"/>
+        <result property="assignmentId" column="assignment_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="content" column="content"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="aiScore" column="ai_score"/>
+        <result property="aiFeedback" column="ai_feedback"/>
+        <result property="teacherScore" column="teacher_score"/>
+        <result property="teacherFeedback" column="teacher_feedback"/>
+        <result property="status" column="status"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="gradeTime" column="grade_time"/>
+        <result property="studentName" column="student_name"/>
+        <result property="assignmentTitle" column="assignment_title"/>
+    </resultMap>
+
+    <sql id="assignmentSelect">
+        SELECT a.*, u.username AS teacher_name, c.name AS class_name,
+               (SELECT COUNT(*) FROM assignment_submission WHERE assignment_id=a.id) AS submission_count,
+               (SELECT COUNT(*) FROM assignment_submission WHERE assignment_id=a.id AND status='graded') AS graded_count
+        FROM assignment a
+        LEFT JOIN user u ON a.teacher_id=u.id
+        LEFT JOIN class c ON a.class_id=c.id
+    </sql>
+
+    <insert id="insertAssignment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO assignment (title, description, teacher_id, class_id, due_date, max_score, rubric, attachments, status)
+        VALUES (#{title}, #{description}, #{teacherId}, #{classId}, #{dueDate}, #{maxScore}, #{rubric}, #{attachments}, #{status})
+    </insert>
+
+    <update id="updateAssignment">
+        UPDATE assignment SET title=#{title}, description=#{description}, class_id=#{classId},
+        due_date=#{dueDate}, max_score=#{maxScore}, rubric=#{rubric}, status=#{status}, update_time=NOW()
+        WHERE id=#{id}
+    </update>
+
+    <select id="selectById" resultMap="assignmentMap">
+        <include refid="assignmentSelect"/> WHERE a.id=#{id}
+    </select>
+
+    <select id="selectByTeacherId" resultMap="assignmentMap">
+        <include refid="assignmentSelect"/> WHERE a.teacher_id=#{teacherId} ORDER BY a.create_time DESC
+    </select>
+
+    <select id="selectByClassId" resultMap="assignmentMap">
+        <include refid="assignmentSelect"/> WHERE a.class_id=#{classId} ORDER BY a.due_date DESC
+    </select>
+
+    <select id="selectByStudentId" resultMap="assignmentMap">
+        <include refid="assignmentSelect"/>
+        WHERE a.class_id IN (SELECT class_id FROM class_member WHERE user_id=#{studentId})
+        AND a.status='published'
+        ORDER BY a.due_date DESC
+    </select>
+
+    <insert id="insertSubmission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO assignment_submission (assignment_id, student_id, content, file_url, status)
+        VALUES (#{assignmentId}, #{studentId}, #{content}, #{fileUrl}, #{status})
+    </insert>
+
+    <update id="updateSubmission">
+        UPDATE assignment_submission SET
+        <if test="content != null">content=#{content},</if>
+        <if test="aiScore != null">ai_score=#{aiScore}, ai_feedback=#{aiFeedback},</if>
+        <if test="teacherScore != null">teacher_score=#{teacherScore}, teacher_feedback=#{teacherFeedback}, grade_time=NOW(),</if>
+        <if test="status != null">status=#{status},</if>
+        submit_time=submit_time
+        WHERE id=#{id}
+    </update>
+
+    <select id="selectSubmission" resultMap="submissionMap">
+        SELECT s.*, u.username AS student_name FROM assignment_submission s
+        LEFT JOIN user u ON s.student_id=u.id
+        WHERE s.assignment_id=#{assignmentId} AND s.student_id=#{studentId}
+    </select>
+
+    <select id="selectSubmissionById" resultMap="submissionMap">
+        SELECT s.*, u.username AS student_name, a.title AS assignment_title
+        FROM assignment_submission s
+        LEFT JOIN user u ON s.student_id=u.id LEFT JOIN assignment a ON s.assignment_id=a.id
+        WHERE s.id=#{id}
+    </select>
+
+    <select id="selectSubmissionsByAssignment" resultMap="submissionMap">
+        SELECT s.*, u.username AS student_name FROM assignment_submission s
+        LEFT JOIN user u ON s.student_id=u.id
+        WHERE s.assignment_id=#{assignmentId} ORDER BY s.submit_time DESC
+    </select>
+
+    <select id="selectSubmissionsByStudent" resultMap="submissionMap">
+        SELECT s.*, a.title AS assignment_title FROM assignment_submission s
+        LEFT JOIN assignment a ON s.assignment_id=a.id
+        WHERE s.student_id=#{studentId} ORDER BY s.submit_time DESC
+    </select>
+
+    <select id="countSubmissions" resultType="int">
+        SELECT COUNT(*) FROM assignment_submission WHERE assignment_id=#{assignmentId}
+    </select>
+
+    <select id="countGraded" resultType="int">
+        SELECT COUNT(*) FROM assignment_submission WHERE assignment_id=#{assignmentId} AND status='graded'
+    </select>
+</mapper>
