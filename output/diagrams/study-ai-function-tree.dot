@@ -1,0 +1,117 @@
+digraph StudyAIFunctionTree {
+  graph [
+    charset="UTF-8",
+    rankdir=LR,
+    bgcolor="white",
+    splines=ortho,
+    nodesep=0.24,
+    ranksep=0.55,
+    margin=0.08,
+    pad=0.08
+  ];
+
+  node [
+    shape=box,
+    style="rounded",
+    color="black",
+    fontcolor="black",
+    fillcolor="white",
+    fontname="Microsoft YaHei",
+    fontsize=17,
+    margin="0.12,0.08"
+  ];
+
+  edge [
+    color="black",
+    arrowsize=0.6,
+    fontname="Microsoft YaHei",
+    fontsize=14
+  ];
+
+  root [label="Study AI\n自托管智能学业辅助平台", fontsize=22, penwidth=1.8];
+
+  user [label="用户管理模块", fontsize=20, penwidth=1.4];
+  chat [label="智能对话模块", fontsize=20, penwidth=1.4];
+  doc [label="知识库管理模块", fontsize=20, penwidth=1.4];
+  profile [label="学习画像模块", fontsize=20, penwidth=1.4];
+  admin [label="管理后台设置模块", fontsize=20, penwidth=1.4];
+  learning [label="扩展学习服务模块", fontsize=20, penwidth=1.4];
+
+  { rank=same; user; chat; doc; profile; admin; learning; }
+  root -> user;
+  root -> chat;
+  root -> doc;
+  root -> profile;
+  root -> admin;
+  root -> learning;
+
+  user_1 [label="账号登录、注册与退出"];
+  user_2 [label="Session 鉴权拦截"];
+  user_3 [label="学生/教师/管理员\n角色权限"];
+  user_4 [label="角色化 System Prompt"];
+  user -> user_1;
+  user_1 -> user_2;
+  user_2 -> user_3;
+  user_3 -> user_4;
+
+  chat_1 [label="多会话创建与历史管理"];
+  chat_2 [label="SSE 流式逐 token 响应"];
+  chat_3 [label="RAG 知识库增强回答"];
+  chat_4 [label="SearXNG 联网搜索\n与引用溯源"];
+  chat_5 [label="深度思考展示"];
+  chat_6 [label="图片上传与视觉问答"];
+  chat -> chat_1;
+  chat_1 -> chat_2;
+  chat_2 -> chat_3;
+  chat_3 -> chat_4;
+  chat_4 -> chat_5;
+  chat_5 -> chat_6;
+
+  doc_1 [label="PDF/Word/TXT/MD\n文档上传"];
+  doc_2 [label="文本解析与切片"];
+  doc_3 [label="Embedding 向量化"];
+  doc_4 [label="ChromaDB 向量入库\n与语义检索"];
+  doc_5 [label="MySQL 向量备份\n与降级检索"];
+  doc_6 [label="文档列表、下载与删除"];
+  doc -> doc_1;
+  doc_1 -> doc_2;
+  doc_2 -> doc_3;
+  doc_3 -> doc_4;
+  doc_4 -> doc_5;
+  doc_5 -> doc_6;
+
+  profile_1 [label="提问日志采集"];
+  profile_2 [label="主题关键词分类"];
+  profile_3 [label="知识星图可视化"];
+  profile_4 [label="薄弱知识点分析"];
+  profile_5 [label="学习建议生成"];
+  profile -> profile_1;
+  profile_1 -> profile_2;
+  profile_2 -> profile_3;
+  profile_3 -> profile_4;
+  profile_4 -> profile_5;
+
+  admin_1 [label="模型接口与密钥热更新"];
+  admin_2 [label="模型预设管理"];
+  admin_3 [label="System Prompt 在线编辑"];
+  admin_4 [label="上下文窗口配置"];
+  admin_5 [label="知识库批量导入\n与任务状态查看"];
+  admin -> admin_1;
+  admin_1 -> admin_2;
+  admin_2 -> admin_3;
+  admin_3 -> admin_4;
+  admin_4 -> admin_5;
+
+  learning_1 [label="班级创建、加入\n与成员管理"];
+  learning_2 [label="作业发布、提交\n与批改"];
+  learning_3 [label="考试组卷、AI 出题\n与自动判卷"];
+  learning_4 [label="错题记录与掌握度更新"];
+  learning_5 [label="成绩统计、待办和打卡"];
+  learning_6 [label="简历分析、画板标注\n与引导式学习"];
+  learning -> learning_1;
+  learning_1 -> learning_2;
+  learning_2 -> learning_3;
+  learning_3 -> learning_4;
+  learning_4 -> learning_5;
+  learning_5 -> learning_6;
+}

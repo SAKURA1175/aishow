@@ -1,0 +1,61 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 120
+
+title 智能问答 SSE 流式对话模块时序图
+
+actor 学生用户
+boundary 聊天前端
+control ChatController
+control ChatServiceImpl
+control VectorRagService
+control WebSearchService
+control AiChatService
+database MySQL
+database ChromaDB
+
+学生用户 -> 聊天前端 : 输入问题并点击发送
+聊天前端 -> ChatController : GET /api/chat/stream
+ChatController -> ChatController : 校验会话与参数
+ChatController -> ChatServiceImpl : streamAiAnswer(user, prompt, sessionId)
+activate ChatServiceImpl
+
+ChatServiceImpl -> MySQL : 查询历史消息
+MySQL --> ChatServiceImpl : 返回上下文
+
+alt 开启联网搜索
+  ChatServiceImpl -> WebSearchService : search(query)
+  WebSearchService --> ChatServiceImpl : 搜索结果
+end
+
+ChatServiceImpl -> VectorRagService : search(query, topK)
+activate VectorRagService
+VectorRagService -> ChromaDB : query(queryVector, topK)
+ChromaDB --> VectorRagService : 相似切片结果
+VectorRagService --> ChatServiceImpl : 返回相关片段
+deactivate VectorRagService
+
+ChatServiceImpl -> AiChatService : streamChat(systemPrompt, history, finalPrompt)
+activate AiChatService
+AiChatService --> ChatServiceImpl : Flux<String>
+deactivate AiChatService
+
+ChatServiceImpl --> ChatController : 流式分片
+deactivate ChatServiceImpl
+
+loop 逐 token 推送
+  ChatController --> 聊天前端 : SSE data chunk
+  聊天前端 --> 学生用户 : 实时渲染回答
+end
+
+ChatController -> MySQL : 保存用户消息与 AI 回复
+MySQL --> ChatController : 保存成功
+ChatController --> 聊天前端 : SSE done
+
+@enduml

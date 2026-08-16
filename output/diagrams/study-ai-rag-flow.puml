@@ -1,0 +1,32 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+skinparam defaultFontName "Microsoft YaHei"
+
+title RAG 检索与切片入库程序流程图
+
+start
+:教师上传文档;
+:校验文件格式与权限;
+if (校验通过?) then (是)
+  :保存文档元数据;
+  :解析正文文本;
+  if (解析成功?) then (是)
+    :按固定长度与重叠窗口切片;
+    :写入 document_chunk;
+    :逐片调用 Embedding 接口;
+    :写入 ChromaDB 向量库;
+    :写入 MySQL 向量备份;
+    stop
+  else (否)
+    :返回解析失败提示;
+    stop
+  endif
+else (否)
+  :返回格式或权限错误;
+  stop
+endif
+
+@enduml

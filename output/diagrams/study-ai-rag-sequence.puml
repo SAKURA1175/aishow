@@ -1,0 +1,46 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+skinparam defaultFontName "Microsoft YaHei"
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 120
+
+title RAG 知识库检索与切片入库模块时序图
+
+actor 教师用户
+boundary 文档管理前端
+control DocumentController
+control DocumentServiceImpl
+control EmbeddingService
+control VectorRagService
+database MySQL
+database ChromaDB
+
+教师用户 -> 文档管理前端 : 上传教学文档
+文档管理前端 -> DocumentController : POST /api/document/upload
+DocumentController -> DocumentServiceImpl : saveDocument()
+activate DocumentServiceImpl
+DocumentServiceImpl -> MySQL : 保存 document 元数据
+MySQL --> DocumentServiceImpl : 返回 documentId
+DocumentServiceImpl -> DocumentServiceImpl : 解析 PDF / DOC / DOCX / TXT / MD
+DocumentServiceImpl -> DocumentServiceImpl : 执行文本切片
+DocumentServiceImpl -> MySQL : 批量写入 document_chunk
+MySQL --> DocumentServiceImpl : 切片保存成功
+deactivate DocumentServiceImpl
+
+loop 对每个切片处理
+  DocumentController -> EmbeddingService : embed(chunkContent)
+  EmbeddingService --> DocumentController : 向量结果
+  DocumentController -> VectorRagService : indexChunk(chunk, vector)
+  VectorRagService -> ChromaDB : upsert(vector, metadata)
+  ChromaDB --> VectorRagService : 写入成功
+  DocumentController -> MySQL : 保存 document_embedding 备份
+  MySQL --> DocumentController : 备份成功
+end
+
+DocumentController --> 文档管理前端 : 返回导入结果
+
+@enduml

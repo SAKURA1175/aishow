@@ -13,12 +13,12 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, name, uploader_id, create_time, stored_filename
+        id, filename as name, uploader_id, create_time, stored_filename
     </sql>
 
     <insert id="insert" parameterType="com.xxzd.study.domain.Document" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO document
-        (name, uploader_id, stored_filename, create_time)
+        (filename, uploader_id, stored_filename, create_time)
         VALUES
         (#{name}, #{uploaderId}, #{storedFilename}, NOW())
     </insert>

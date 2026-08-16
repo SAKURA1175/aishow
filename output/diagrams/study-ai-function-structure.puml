@@ -1,0 +1,73 @@
+@startwbs
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 220
+skinparam defaultFontName "Microsoft YaHei"
+skinparam monochrome true
+
+<style>
+wbsDiagram {
+  FontName "Microsoft YaHei"
+  FontSize 18
+  LineColor black
+  BackGroundColor white
+  RoundCorner 0
+  Padding 8
+  Margin 8
+}
+node {
+  LineColor black
+  BackGroundColor white
+  FontColor black
+}
+.rootNode {
+  FontSize 22
+  FontStyle bold
+}
+.moduleNode {
+  FontStyle bold
+}
+</style>
+
+title Study AI 系统总体功能模块图
+
+* <&person> Study AI 自托管智能学业辅助平台 <<rootNode>>
+** 用户管理模块 <<moduleNode>>
+*** 账号登录、注册与退出
+*** Session 鉴权拦截
+*** 学生、教师、管理员角色权限
+*** 角色化 System Prompt 加载
+** 智能对话模块 <<moduleNode>>
+*** 多会话创建与历史管理
+*** SSE 流式逐 token 响应
+*** RAG 知识库增强回答
+*** SearXNG 联网搜索与引用溯源
+*** 深度思考展示与图片问答
+** 知识库管理模块 <<moduleNode>>
+*** PDF、Word、TXT、MD 文档上传
+*** 文本解析、切片与重叠窗口处理
+*** Embedding 向量化
+*** ChromaDB 向量入库与语义检索
+*** MySQL 向量备份与降级检索
+** 学习画像模块 <<moduleNode>>
+*** 提问日志采集
+*** TopicClassifier 主题分类
+*** 知识星图可视化
+*** 薄弱知识点与学习建议
+** 管理后台设置模块 <<moduleNode>>
+*** 模型接口、模型名称与密钥热更新
+*** System Prompt 在线编辑
+*** 上下文窗口参数配置
+*** 知识库批量导入与任务状态查看
+** 扩展学习服务模块 <<moduleNode>>
+*** 班级创建、加入与成员管理
+*** 作业发布、提交与批改
+*** 考试组卷、AI 出题与自动判卷
+*** 错题记录、成绩统计、待办和打卡
+*** 简历优化、画板标注与引导式学习
+
+legend bottom
+图 3-1 系统总体功能模块图
+说明：主干依据报告第 3.2 节五大模块组织，扩展学习服务依据后端 Controller 与前端路由补充。
+endlegend
+@endwbs

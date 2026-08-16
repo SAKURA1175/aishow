@@ -24,3 +24,17 @@ frontend/dist/
 项目简历总结.md
 .cursorrules
 deploy.bat
+
+# Scratch & temporary artifacts
+scratch/
+tmp/
+.local/
+.playwright-mcp/
+*.bak
+*_副本.docx
+login-snapshot.md
+
+# Root temporary screenshots (managed in docs/screenshots/)
+aishow-*.png
+dashboard-page.png
+login-page.png

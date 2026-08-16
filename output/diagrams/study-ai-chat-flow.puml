@@ -1,0 +1,38 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+skinparam defaultFontName "Microsoft YaHei"
+
+title 智能问答核心逻辑流程图
+
+start
+:用户输入问题;
+:校验登录状态与参数;
+if (输入是否合法?) then (是)
+  :创建或获取会话;
+  :保存用户消息;
+  :执行输入安全过滤;
+  if (是否开启联网搜索?) then (是)
+    :调用 SearXNG 获取网页结果;
+  endif
+  :读取历史上下文;
+  :执行向量检索;
+  if (ChromaDB 返回结果?) then (是)
+    :拼接知识片段;
+  else (否)
+    :进入 MySQL 降级检索;
+  endif
+  :组装最终 Prompt;
+  :调用 AI 流式生成接口;
+  :SSE 逐 token 推送到前端;
+  :保存 AI 回复;
+  :记录提问日志与学习画像数据;
+  stop
+else (否)
+  :返回错误提示;
+  stop
+endif
+
+@enduml
