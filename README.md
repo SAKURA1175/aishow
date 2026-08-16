@@ -29,7 +29,7 @@
 
 <br/>
 
-[📖 平台概述](#-平台概述) · [✨ 18大核心功能](#-18大核心功能全景拆解) · [📸 18大具体页面真实截图](#-18大具体页面真实截图展示) · [🚀 快速部署](#-快速部署指南) · [🗄️ 数据库 SQL](#-完整数据库建表-sql) · [🔌 API 总结](#-核心-api-接口总结)
+[📖 平台概述](#-平台概述) · [✨ 18大核心功能](#-18大核心功能全景拆解) · [📸 18大具体功能真实页面截图](#-18大具体功能真实页面截图展示) · [🚀 快速部署](#-快速部署指南) · [🗄️ 数据库 SQL](#-完整数据库建表-sql) · [🔌 API 总结](#-核心-api-接口总结)
 
 </div>
 
@@ -41,39 +41,39 @@
 
 **Study AI** 是一款基于 **Spring Boot 3.3 + Spring AI + React 18 + Vite** 开发的企业级、自托管智能学业辅助与 RAG 知识库系统。
 
-系统针对真实教育与学习场景进行深度开发，包含 **18 个完全独立且高度协同的页面功能模块**。无论是学生自主答疑、查看能力分布、做题复习，还是教师发布作业、批改试卷、管理班级知识库，亦或是系统管理员在线调整底层大模型参数，均提供了完整、美观的响应式 UI 界面。
+系统针对真实教育与学习场景进行深度开发，包含 **18 个完全独立且高度协同的真实功能页面**。无论是学生自主答疑、查看能力分布、做题复习，还是教师发布作业、批改试卷、管理班级知识库，亦或是系统管理员在线调整底层大模型参数，均提供了完整、美观的响应式 UI 界面。
 
 ---
 
-<a name="18大具体页面真实截图展示"></a>
+<a name="18大具体功能真实页面截图展示"></a>
 
-## 📸 18大具体页面真实截图展示 (All 18 Real Page Screenshots)
+## 📸 18大具体功能真实页面截图展示 (All 18 Real Page Screenshots)
 
-以下是在真实运行环境中（`http://localhost:5174`）截取的所有 18 个核心功能页面的高分辨率真实界面：
+以下是在项目真实运行环境（`http://localhost:5174`）中，登录系统后实时截取的 **18 个独立功能页面的高清真实界面**（均已过滤任何未经鉴权重复跳转的页面）：
 
 ### 1. 🔑 统一登录与身份认证 (`/login`)
-系统提供安全优雅的统一登录/注册入口，支持学生、教师与系统管理员多角色快速切换，内置动画互动与 DEMO 演示账号快速填入。
+统一登录/注册入口，支持学生、教师与系统管理员多角色快速切换，内置演示账号快速填入与微信扫码互动。
 
 ![01-login.png](docs/screenshots/01-login.png)
 
 ---
 
-### 2. 📊 学生工作台 & 平台主页 (`/dashboard`)
+### 2. 📊 学生学业工作台 (`/dashboard`)
 包含学业导航入口、最近会话记录、热点推荐主题以及快捷 AI 问答唤起卡片。
 
 ![02-dashboard.png](docs/screenshots/02-dashboard.png)
 
 ---
 
-### 3. 💬 智能学业问答与 SSE 流式对话 (`/chat`)
-双栏 Chat 交互界面，实时显示 SSE 逐 Token 流式输出、`<think>` 折叠思考链、KaTeX 数学公式渲染、自托管联网搜索切换及知识库引用卡片。
+### 3. 💬 智能学业问答系统 (`/chat`)
+双栏 Chat 交互界面，支持 SSE 逐 Token 流式输出、`<think>` 折叠思考链、KaTeX 数学公式渲染、自托管 SearXNG 联网搜索切换及 RAG 知识库引用卡片。
 
 ![03-chat-ai.png](docs/screenshots/03-chat-ai.png)
 
 ---
 
-### 4. 📚 知识库管理与 RAG 文档切片 (`/documents`)
-支持上传 PDF / Word / TXT 教学课件，可视化展示全自动切片向量化入库进度、切片段落明细与 ChromaDB 存储状态。
+### 4. 📚 RAG 知识库管理 (`/documents`)
+上传 PDF / Word / TXT 教学课件，可视化展示全自动切片向量化入库进度、切片段落明细与 ChromaDB 存储状态。
 
 ![04-documents-rag.png](docs/screenshots/04-documents-rag.png)
 
@@ -86,7 +86,7 @@
 
 ---
 
-### 6. 🌌 知识星图与 D3 拓扑分析 (`/starmap`)
+### 6. 🌌 D3 知识星图与拓扑分析 (`/starmap`)
 前端采用 D3.js 渲染互动式知识拓扑星图，直观展现学科知识点之间的层级递进与关联逻辑。
 
 ![06-starmap.png](docs/screenshots/06-starmap.png)
@@ -181,11 +181,11 @@
 
 | 系统总体功能结构图 | 数据库 E-R 概念图 |
 |---|---|
-| ![08-function-tree.png](docs/screenshots/08-function-tree.png) | ![09-er-diagram.png](docs/screenshots/09-er-diagram.png) |
+| ![19-function-tree.png](docs/screenshots/19-function-tree.png) | ![20-er-diagram.png](docs/screenshots/20-er-diagram.png) |
 
 | SSE 流式问答交互时序图 | RAG 检索与切片入库时序图 |
 |---|---|
-| ![10-chat-sequence.png](docs/screenshots/10-chat-sequence.png) | ![11-rag-sequence.png](docs/screenshots/11-rag-sequence.png) |
+| ![21-chat-sequence.png](docs/screenshots/21-chat-sequence.png) | ![22-rag-sequence.png](docs/screenshots/22-rag-sequence.png) |
 
 ---
 
