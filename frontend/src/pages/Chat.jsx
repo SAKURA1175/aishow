@@ -605,30 +605,42 @@ export default function Chat() {
                     disabled={isStreaming}
                     onClick={() => setIsDeepThink(!isDeepThink)}
                     className={cn(
-                      'flex items-center gap-1.5 text-[11px] font-medium transition-colors rounded-lg px-2 py-1',
+                      'flex items-center gap-1.5 text-[11px] font-semibold transition-all rounded-lg px-2.5 py-1 border',
                       isDeepThink
-                        ? 'text-indigo-500 bg-indigo-500/10'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        ? 'text-indigo-600 bg-indigo-500/15 border-indigo-500/30 shadow-sm shadow-indigo-500/10'
+                        : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent'
                     )}
-                    title="深度思考模式"
+                    title={isDeepThink ? "深度思考已开启（点击关闭）" : "点击开启深度思考"}
                   >
                     <span className="text-[12px]">🧠</span>
-                    {isDeepThink ? '深度思考开' : '深度思考关'}
+                    <span>深度思考</span>
+                    <span className={cn(
+                      "text-[9px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider",
+                      isDeepThink ? "bg-indigo-600 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                      {isDeepThink ? 'ON' : 'OFF'}
+                    </span>
                   </button>
                   <button
                     type="button"
                     disabled={isStreaming}
                     onClick={() => setIsWebSearch(!isWebSearch)}
                     className={cn(
-                      'flex items-center gap-1.5 text-[11px] font-medium transition-colors rounded-lg px-2 py-1',
+                      'flex items-center gap-1.5 text-[11px] font-semibold transition-all rounded-lg px-2.5 py-1 border',
                       isWebSearch
-                        ? 'text-blue-500 bg-blue-500/10'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                        ? 'text-blue-600 bg-blue-500/15 border-blue-500/30 shadow-sm shadow-blue-500/10'
+                        : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent'
                     )}
-                    title="联网搜索"
+                    title={isWebSearch ? "联网搜索已开启（点击关闭）" : "点击开启联网搜索"}
                   >
-                    <Globe className="w-3.5 h-3.5" />
-                    {isWebSearch ? '联网搜索开' : '联网搜索关'}
+                    <Globe className={cn("w-3.5 h-3.5", isWebSearch && "text-blue-600")} />
+                    <span>联网搜索</span>
+                    <span className={cn(
+                      "text-[9px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider",
+                      isWebSearch ? "bg-blue-600 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                      {isWebSearch ? 'ON' : 'OFF'}
+                    </span>
                   </button>
                   <span className="text-[10px] text-muted-foreground/50 font-medium ml-1">支持 Markdown</span>
                 </div>

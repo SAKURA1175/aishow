@@ -66,14 +66,14 @@
 ---
 
 ### 3. 💬 智能学业问答系统 (`/chat`)
-双栏 Chat 交互界面，支持 SSE 逐 Token 流式输出、`<think>` 折叠思考链、KaTeX 数学公式渲染、自托管 SearXNG 联网搜索切换及 RAG 知识库引用卡片。
+双栏 Chat 交互界面，支持 SSE 逐 Token 流式输出、`<think>` 折叠思考链、KaTeX 数学公式渲染、一键开关式自托管 SearXNG 联网搜索（带清晰 `ON/OFF` 状态徽标）及 RAG 知识库/互联网信源引用卡片。
 
 ![03-chat-ai.png](docs/screenshots/03-chat-ai.png)
 
 ---
 
 ### 4. 📚 RAG 知识库管理 (`/documents`)
-上传 PDF / Word / TXT 教学课件，可视化展示全自动切片向量化入库进度、切片段落明细与 ChromaDB 存储状态。
+上传 PDF / Word / TXT 教学课件，基于 Apache POI 与 PDFBox 进行多格式文本抽取，采用 500 字符重叠滑动窗口切片及 BGE-M3 1024 维向量化，可视化展示切片入库进度、段落明细、ChromaDB 向量存储与 MySQL 降级备份状态。
 
 ![04-documents-rag.png](docs/screenshots/04-documents-rag.png)
 
@@ -171,13 +171,13 @@
 ---
 
 ### 18. 🛠️ 系统管理后台与热更新设置 (`/admin`)
-系统管理员控制台，支持无缝热切换 LLM API Endpoint、修改角色 Prompt、调优上下文记忆参数及监控服务器健康状态。
+系统管理员控制台，支持无缝热切换 LLM API Endpoint、修改角色 Prompt、知识库批量文件拖拽上传与切片任务进度追踪、调优上下文记忆参数及监控服务器健康状态。
 
 ![18-admin-panel.png](docs/screenshots/18-admin-panel.png)
 
 ---
 
-### 📐 UML 系统设计架构图展示
+### 📐 UML 系统设计架构图与业务流程图展示
 
 | 系统总体功能结构图 | 数据库 E-R 概念图 |
 |---|---|
@@ -186,6 +186,10 @@
 | SSE 流式问答交互时序图 | RAG 检索与切片入库时序图 |
 |---|---|
 | ![21-chat-sequence.png](docs/screenshots/21-chat-sequence.png) | ![22-rag-sequence.png](docs/screenshots/22-rag-sequence.png) |
+
+| 联网搜索业务流程图 (图 4-8) |
+|---|
+| ![fig4-8-web-search-flow.png](docs/screenshots/fig4-8-web-search-flow.png) |
 
 ---
 
