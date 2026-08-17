@@ -1,0 +1,51 @@
+@startuml
+!pragma layout smetana
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 200
+skinparam defaultFontName "Microsoft YaHei"
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+skinparam ActivityBorderColor #2B3A42
+skinparam ActivityBackgroundColor #F8FAFC
+skinparam ArrowColor #1E293B
+
+title 图4-8 联网搜索流程图
+
+start
+:用户在聊天输入框键入学科问题;
+:勾选开启“联网搜索”功能开关;
+:点击发送按钮发起提问请求;
+
+partition 前端展示 {
+  :前端向后端建立 SSE 连接;
+  :聊天窗口展示“正在联网搜索...”状态提示及加载动效;
+}
+
+partition 后端检索与处理 {
+  :后端接收提问请求并校验用户身份;
+  :WebSearchService 调用 SearXNG API 发起实时检索;
+  
+  if (SearXNG 搜索成功且返回结果?) then (是)
+    :解析 JSON 搜索结果;
+    :提取网页标题(Title)、链接(URL)与摘要(Snippet);
+    :构建结构化联网搜索上下文(Web Context);
+  else (否)
+    :捕获异常或空结果，跳过联网上下文拼接;
+    :返回“未检索到相关外部网页”或降级为离线问答;
+  endif
+  
+  :将联网上下文、System Prompt与历史对话组装为最终 Prompt;
+  :调用大模型流式生成接口 (AiChatService);
+}
+
+partition 响应与结果呈现 {
+  :通过 SSE 逐 token 向前端推送生成结果;
+  :回答生成完成后，组装来源卡片元数据;
+  :前端同步渲染 AI 回答与可点击的“来源参考卡片”;
+  :后端异步持久化保存消息记录与提问日志;
+}
+
+stop
+
+@enduml
