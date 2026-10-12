@@ -18,17 +18,25 @@ public class WrongQuestionController {
         mapper.insert(q); return ApiResponse.ok("添加成功", q);
     }
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id, @RequestBody WrongQuestion q, HttpSession session) {
+    public ApiResponse<?> update(@PathVariable Long id, @RequestBody WrongQuestion q, HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         WrongQuestion ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("错题不存在");
+        if (!ex.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         q.setId(id); mapper.update(q); return ApiResponse.ok("更新成功");
     }
     @DeleteMapping("/{id}")
-    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session) {
+    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         WrongQuestion ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("错题不存在");
+        if (!ex.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         mapper.delete(id); return ApiResponse.ok("删除成功");
     }
     @GetMapping("/my")
@@ -39,22 +47,30 @@ public class WrongQuestionController {
     }
 
     @PostMapping("/{id}/mastery")
-    public ApiResponse<?> setMastery(@PathVariable Long id, @RequestParam String mastery, HttpSession session) {
+    public ApiResponse<?> setMastery(@PathVariable Long id, @RequestParam String mastery, HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
         WrongQuestion q = mapper.selectById(id);
-        if (q != null) {
-            q.setMastery(mastery);
-            mapper.update(q);
+        if (q == null) {
+            return ApiResponse.fail("错题不存在");
         }
+        if (!q.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权修改他人错题掌握状态");
+        }
+        q.setMastery(mastery);
+        mapper.update(q);
         return ApiResponse.ok("更新成功");
     }
 
     @Resource private com.xxzd.study.ai.AiChatService aiChatService;
 
     @PostMapping("/{id}/ai-analysis")
-    public ApiResponse<?> aiAnalysis(@PathVariable Long id, HttpSession session) {
+    public ApiResponse<?> aiAnalysis(@PathVariable Long id, HttpSession session, jakarta.servlet.http.HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         WrongQuestion q = mapper.selectById(id);
-        if (q == null || !q.getUserId().equals(u.getId())) {
+        if (q == null) return ApiResponse.fail("错题不存在");
+        if (!q.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("错题不存在或无权操作");
         }
 

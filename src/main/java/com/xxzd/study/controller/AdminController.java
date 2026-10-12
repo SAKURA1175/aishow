@@ -13,6 +13,7 @@ import com.xxzd.study.mapper.DocumentChunkMapper;
 import com.xxzd.study.mapper.DocumentEmbeddingMapper;
 import com.xxzd.study.service.DocumentService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -65,8 +66,8 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/model/config")
-    public ApiResponse<ModelConfig> getModelConfig(HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<ModelConfig> getModelConfig(HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         ModelConfig cfg = new ModelConfig();
         cfg.setModel(aiProperties.getModel());
         cfg.setApiUrl(aiProperties.getApi().getUrl());
@@ -83,8 +84,8 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────────────────
 
     @PostMapping("/model/config")
-    public ApiResponse<Void> updateModelConfig(@RequestBody ModelConfig config, HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<Void> updateModelConfig(@RequestBody ModelConfig config, HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
 
         if (config.getModel() == null || config.getModel().isBlank()) {
             return ApiResponse.fail("模型名称不能为空");
@@ -152,16 +153,15 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/model/presets")
-    public ApiResponse<List<ModelPreset>> getModelPresets(HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<List<ModelPreset>> getModelPresets(HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         List<ModelPreset> presets = new ArrayList<>();
 
         // 本地模型（Ollama / LM Studio）
         presets.add(new ModelPreset("local-lmstudio", "gemma-4-e4b-it", "LM Studio (本地)", "http://localhost:1234", "本地 · LM Studio", "lm-studio"));
         presets.add(new ModelPreset("local-ollama", "qwen2.5:7b", "Ollama (本地)", "http://localhost:11434", "本地 · Ollama", "ollama"));
 
-        // 当前默认/测试可用的接口中转
-        presets.add(new ModelPreset("remote-deepseek", "deepseek-v4-pro", "DeepSeek V4 Pro (中转)", "https://api.fanjinkai.online/v1", "云端中转", "sk-b5158ebc7b0f4f9db899c13f5ad6f8a3"));
+        // 云端中转与官方模型（不在代码里写真实密钥）
         presets.add(new ModelPreset("remote-lemon", "gemini-2.5-pro", "Gemini 2.5 Pro (中转)", "https://new.lemonapi.site/v1", "云端中转", "sk-..."));
 
         // 官方云端模型
@@ -179,9 +179,10 @@ public class AdminController {
     @PostMapping("/knowledge/import")
     public ApiResponse<BatchImportResult> batchImport(
             @RequestParam("files") MultipartFile[] files,
-            HttpSession session) throws IOException {
+            HttpSession session,
+            HttpServletResponse response) throws IOException {
 
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         if (files == null || files.length == 0) return ApiResponse.fail("请选择至少一个文件");
 
         User user = (User) session.getAttribute("currentUser");
@@ -209,7 +210,8 @@ public class AdminController {
         // 后台异步处理
         final User finalUser = user;
         Thread t = new Thread(() -> {
-            int done = 0, failed = 0;
+            int done = 0, failed = 0, vectorizedChunks = 0;
+            boolean vectorPartial = false;
             for (FileEntry entry : entries) {
                 try {
                     String originalFilename = entry.name();
@@ -235,21 +237,29 @@ public class AdminController {
                     // 向量化（同步，因为是后台线程）
                     List<DocumentChunk> chunks = documentChunkMapper.selectByDocumentId(doc.getId());
                     int chunkOk = 0;
-                    for (DocumentChunk chunk : chunks) {
-                        try {
-                            float[] vec = embeddingService.embed(chunk.getContent());
-                            vectorRagService.indexChunk(chunk, vec);
-                            DocumentEmbedding emb = new DocumentEmbedding();
-                            emb.setChunkId(chunk.getId());
-                            emb.setVectorJson(EmbeddingService.toJson(vec));
-                            documentEmbeddingMapper.deleteByChunkId(chunk.getId());
-                            documentEmbeddingMapper.insert(emb);
-                            chunkOk++;
-                        } catch (Exception e) {
-                            System.err.println("[BatchImport] chunk " + chunk.getId() + " 向量化失败: " + e.getMessage());
+                    if (chunks != null) {
+                        for (DocumentChunk chunk : chunks) {
+                            try {
+                                float[] vec = embeddingService.embed(chunk.getContent());
+                                vectorRagService.indexChunk(chunk, vec);
+                                DocumentEmbedding emb = new DocumentEmbedding();
+                                emb.setChunkId(chunk.getId());
+                                emb.setVectorJson(EmbeddingService.toJson(vec));
+                                documentEmbeddingMapper.deleteByChunkId(chunk.getId());
+                                documentEmbeddingMapper.insert(emb);
+                                chunkOk++;
+                            } catch (Exception e) {
+                                System.err.println("[BatchImport] chunk " + chunk.getId() + " 向量化失败: " + e.getMessage());
+                            }
                         }
                     }
-                    System.out.println("[BatchImport] ✅ " + originalFilename + " 处理完成，向量化 " + chunkOk + "/" + chunks.size() + " 个切片");
+                    int chunkTotal = chunks == null ? 0 : chunks.size();
+                    vectorizedChunks += chunkOk;
+                    task.setVectorizedChunks(vectorizedChunks);
+                    if (chunkTotal > 0 && chunkOk == 0) {
+                        vectorPartial = true;
+                    }
+                    System.out.println("[BatchImport] ✅ " + originalFilename + " 处理完成，向量化 " + chunkOk + "/" + chunkTotal + " 个切片");
 
                     done++;
                     task.setDone(done);
@@ -260,8 +270,10 @@ public class AdminController {
                     System.err.println("[BatchImport] ❌ 文件处理失败: " + entry.name() + " -> " + e.getMessage());
                 }
             }
-            task.setStatus(failed == 0 ? "done" : "partial");
-            System.out.println("[BatchImport] 任务完成: done=" + task.getDone() + " failed=" + task.getFailed());
+            task.setVectorizedChunks(vectorizedChunks);
+            task.setStatus(failed == 0 && !vectorPartial ? "done" : "partial");
+            System.out.println("[BatchImport] 任务完成: done=" + task.getDone() + " failed=" + task.getFailed()
+                    + " vectorizedChunks=" + vectorizedChunks + " status=" + task.getStatus());
         }, "batch-import-" + taskId);
         t.setDaemon(true);
         t.start();
@@ -269,6 +281,7 @@ public class AdminController {
         BatchImportResult result = new BatchImportResult();
         result.setTaskId(taskId);
         result.setTotal(entries.size());
+        result.setVectorizedChunks(task.getVectorizedChunks());
         return ApiResponse.ok("批量导入任务已启动，正在后台处理", result);
     }
 
@@ -280,9 +293,13 @@ public class AdminController {
     // 5. 查询向量化任务进度
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // 5. 查询向量化任务进度
+    // ─────────────────────────────────────────────────────────────────────────
+
     @GetMapping("/knowledge/task/{taskId}")
-    public ApiResponse<VectorizeTask> getTaskStatus(@PathVariable String taskId, HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<VectorizeTask> getTaskStatus(@PathVariable String taskId, HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         VectorizeTask task = TASK_MAP.get(taskId);
         if (task == null) return ApiResponse.fail("任务不存在");
         return ApiResponse.ok(task);
@@ -293,8 +310,8 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/chat/config")
-    public ApiResponse<ChatConfig> getChatConfig(HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<ChatConfig> getChatConfig(HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         ChatConfig cfg = new ChatConfig();
         AiProperties.Rag rag = aiProperties.getRag();
         cfg.setMaxHistoryMessages(rag != null ? rag.getMaxHistoryMessages() : 30);
@@ -303,8 +320,8 @@ public class AdminController {
     }
 
     @PostMapping("/chat/config")
-    public ApiResponse<Void> updateChatConfig(@RequestBody ChatConfig config, HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<Void> updateChatConfig(@RequestBody ChatConfig config, HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         if (config.getMaxHistoryMessages() < 2 || config.getMaxHistoryMessages() > 100) {
             return ApiResponse.fail("历史消息条数需在 2~100 之间");
         }
@@ -328,8 +345,8 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/prompt/{role}")
-    public ApiResponse<PromptConfig> getPrompt(@PathVariable String role, HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<PromptConfig> getPrompt(@PathVariable String role, HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         PromptConfig cfg = new PromptConfig();
         cfg.setRole(role);
         cfg.setContent(systemPromptProvider.getPromptRaw(role));
@@ -337,8 +354,8 @@ public class AdminController {
     }
 
     @PostMapping("/prompt/{role}")
-    public ApiResponse<Void> updatePrompt(@PathVariable String role, @RequestBody PromptConfig cfg, HttpSession session) {
-        if (!isAdmin(session)) return ApiResponse.fail("无权限");
+    public ApiResponse<Void> updatePrompt(@PathVariable String role, @RequestBody PromptConfig cfg, HttpSession session, HttpServletResponse response) {
+        if (!isAdmin(session, response)) return ApiResponse.fail("无权限");
         if (cfg.getContent() == null || cfg.getContent().isBlank()) {
             return ApiResponse.fail("提示词内容不能为空");
         }
@@ -352,10 +369,21 @@ public class AdminController {
     // 工具方法
     // ─────────────────────────────────────────────────────────────────────────
 
-    private boolean isAdmin(HttpSession session) {
+    private boolean isAdmin(HttpSession session, HttpServletResponse response) {
         Object obj = session.getAttribute("currentUser");
-        if (!(obj instanceof User u)) return false;
-        return "admin".equals(u.getRole()) || "teacher".equals(u.getRole());
+        if (!(obj instanceof User u)) {
+            if (response != null) response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return false;
+        }
+        if (!"admin".equals(u.getRole())) {
+            if (response != null) response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isAdmin(HttpSession session) {
+        return isAdmin(session, null);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -403,11 +431,14 @@ public class AdminController {
     public static class BatchImportResult {
         private String taskId;
         private int total;
+        private int vectorizedChunks;
 
         public String getTaskId() { return taskId; }
         public void setTaskId(String taskId) { this.taskId = taskId; }
         public int getTotal() { return total; }
         public void setTotal(int total) { this.total = total; }
+        public int getVectorizedChunks() { return vectorizedChunks; }
+        public void setVectorizedChunks(int vectorizedChunks) { this.vectorizedChunks = vectorizedChunks; }
     }
 
     public static class VectorizeTask {
@@ -417,6 +448,7 @@ public class AdminController {
         private int failed;
         private String status; // running / done / partial
         private String lastFile;
+        private int vectorizedChunks;
 
         public String getTaskId() { return taskId; }
         public void setTaskId(String taskId) { this.taskId = taskId; }
@@ -430,6 +462,8 @@ public class AdminController {
         public void setStatus(String status) { this.status = status; }
         public String getLastFile() { return lastFile; }
         public void setLastFile(String lastFile) { this.lastFile = lastFile; }
+        public int getVectorizedChunks() { return vectorizedChunks; }
+        public void setVectorizedChunks(int vectorizedChunks) { this.vectorizedChunks = vectorizedChunks; }
     }
 
     public static class ChatConfig {

@@ -10,10 +10,14 @@
         <result property="uploaderId" column="uploader_id"/>
         <result property="createTime" column="create_time"/>
         <result property="storedFilename" column="stored_filename"/>
+        <result property="fileType" column="file_type"/>
+        <result property="charCount" column="char_count"/>
+        <result property="chunkCount" column="chunk_count"/>
+        <result property="status" column="status"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, filename as name, uploader_id, create_time, stored_filename
+        id, filename as name, uploader_id, create_time, stored_filename, file_type, char_count, chunk_count, status
     </sql>
 
     <insert id="insert" parameterType="com.xxzd.study.domain.Document" useGeneratedKeys="true" keyProperty="id">
@@ -44,6 +48,15 @@
     <update id="updateStoredFilename">
         UPDATE document
         SET stored_filename = #{storedFilename}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateChunkReady">
+        UPDATE document
+        SET chunk_count = #{chunkCount},
+            char_count = #{charCount},
+            file_type = #{fileType},
+            status = 'ready'
         WHERE id = #{id}
     </update>
 </mapper>

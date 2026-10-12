@@ -52,6 +52,9 @@ public class DocumentController {
     @Resource
     private com.xxzd.study.ai.VectorRagService vectorRagService;
 
+    @Resource
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     /** OSS 是否已配置 */
     private boolean isOssConfigured() {
         String keyId = ossProperties.getAccessKeyId();
@@ -59,19 +62,21 @@ public class DocumentController {
     }
 
     @PostMapping("/upload")
-    public ApiResponse<DocumentInfo> upload(MultipartFile file, HttpSession session) throws IOException {
+    public ApiResponse<DocumentInfo> upload(MultipartFile file, HttpSession session, HttpServletResponse response) throws IOException {
         if (file == null || file.isEmpty()) {
             return ApiResponse.fail("上传文件不能为空");
         }
         Object userObj = session.getAttribute("currentUser");
         if (!(userObj instanceof User)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return ApiResponse.fail("请先登录后再上传文档");
         }
         User user = (User) userObj;
 
-        // 鉴权：只有教师可以上传文档
-        if (!"teacher".equals(user.getRole())) {
-            return ApiResponse.fail("只有教师可以上传文档");
+        // 鉴权：教师或管理员可以上传文档
+        if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("仅教师或管理员可以上传文档");
         }
 
         Document document = null;
@@ -142,27 +147,70 @@ public class DocumentController {
     }
 
     @GetMapping("/list")
-    public ApiResponse<List<DocumentInfo>> list() {
+    public ApiResponse<List<DocumentInfo>> list(HttpSession session, HttpServletResponse response) {
+        Object userObj = session.getAttribute("currentUser");
+        if (!(userObj instanceof User user)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return ApiResponse.fail("未登录");
+        }
+        boolean isAdmin = "admin".equals(user.getRole());
+        boolean isTeacher = "teacher".equals(user.getRole());
+
         List<Document> documents = documentService.listAll();
         List<DocumentInfo> list = new java.util.ArrayList<>();
+
+        java.util.Set<Long> allowedUploaderIds = new java.util.HashSet<>();
+        if (!isAdmin && !isTeacher) {
+            List<Long> teacherIds = jdbcTemplate.queryForList(
+                "SELECT DISTINCT c.teacher_id FROM class_member cm JOIN class c ON cm.class_id = c.id WHERE cm.user_id = ?",
+                Long.class,
+                user.getId()
+            );
+            allowedUploaderIds.addAll(teacherIds);
+        }
+
         for (Document d : documents) {
-            DocumentInfo info = new DocumentInfo();
-            info.setId(d.getId());
-            info.setName(d.getName());
-            info.setUploaderId(d.getUploaderId());
-            list.add(info);
+            if (isAdmin || isTeacher || allowedUploaderIds.contains(d.getUploaderId())) {
+                DocumentInfo info = new DocumentInfo();
+                info.setId(d.getId());
+                info.setName(d.getName());
+                info.setUploaderId(d.getUploaderId());
+                list.add(info);
+            }
         }
         return ApiResponse.ok(list);
     }
 
     @GetMapping("/download/{id}")
-    public void download(@PathVariable("id") Long id, HttpServletResponse response) throws IOException {
+    public void download(@PathVariable("id") Long id, HttpSession session, HttpServletResponse response) throws IOException {
+        Object userObj = session.getAttribute("currentUser");
+        if (!(userObj instanceof User user)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
         Document document = documentService.findById(id);
         if (document == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
+
+        boolean isAdmin = "admin".equals(user.getRole());
+        boolean isTeacher = "teacher".equals(user.getRole());
+        if (!isAdmin && !isTeacher) {
+            Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM class_member cm JOIN class c ON cm.class_id = c.id WHERE cm.user_id = ? AND c.teacher_id = ?",
+                Integer.class,
+                user.getId(),
+                document.getUploaderId()
+            );
+            if (count == null || count == 0) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"success\":false,\"message\":\"无权下载该文档\"}");
+                return;
+            }
+        }
+
         String stored = document.getStoredFilename();
         if (stored != null && stored.startsWith("documents/")) {
              // OSS
@@ -187,21 +235,27 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable("id") Long id, HttpSession session) {
+    public ApiResponse<Void> delete(@PathVariable("id") Long id, HttpSession session, HttpServletResponse response) {
         Object userObj = session.getAttribute("currentUser");
         if (!(userObj instanceof User)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return ApiResponse.fail("未登录");
         }
         User user = (User) userObj;
-        
-        // 权限检查：只有教师可以删除文档
-        if (!"teacher".equals(user.getRole())) {
-            return ApiResponse.fail("只有教师可以删除文档");
+
+        // 权限检查：教师或管理员可以删除文档
+        if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("仅教师或管理员可以删除文档");
         }
-        
+
         Document document = documentService.findById(id);
         if (document == null) {
             return ApiResponse.fail("文档不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !user.getId().equals(document.getUploaderId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权删除他人上传的文档");
         }
         boolean ok = documentService.deleteById(id);
         if (!ok) {

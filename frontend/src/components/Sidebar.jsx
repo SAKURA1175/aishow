@@ -48,7 +48,8 @@ export default function Sidebar() {
     navigate('/login')
   }
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'teacher'
+  const isAdmin = user?.role === 'admin'
+  const canViewScreen = isAdmin || user?.role === 'teacher'
 
   const renderNavGroup = (title, items) => (
     <div className="space-y-1">
@@ -101,7 +102,7 @@ export default function Sidebar() {
         {renderNavGroup('AI 助手', aiNavItems)}
         {renderNavGroup('个人中心', userNavItems)}
         
-        {isAdmin && (
+        {canViewScreen && (
           <div className="space-y-1">
             <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">管理与分析</h3>
             <NavLink
@@ -121,20 +122,22 @@ export default function Sidebar() {
               <span className="flex-1">学情大屏</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 font-bold">LIVE</span>
             </NavLink>
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 group',
-                  isActive ? 'bg-muted/80 text-foreground font-medium shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                )
-              }
-            >
-              <div className="p-1 rounded-md text-muted-foreground group-hover:text-foreground transition-colors">
-                <Settings className="w-[18px] h-[18px]" />
-              </div>
-              <span>后台管理</span>
-            </NavLink>
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 group',
+                    isActive ? 'bg-muted/80 text-foreground font-medium shadow-sm' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  )
+                }
+              >
+                <div className="p-1 rounded-md text-muted-foreground group-hover:text-foreground transition-colors">
+                  <Settings className="w-[18px] h-[18px]" />
+                </div>
+                <span>后台管理</span>
+              </NavLink>
+            )}
           </div>
         )}
       </div>

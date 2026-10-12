@@ -1,8 +1,10 @@
 package com.xxzd.study.security;
 
+import com.xxzd.study.ai.AiChatService;
 import com.xxzd.study.config.WebConfig;
 import com.xxzd.study.controller.ChatController;
 import com.xxzd.study.interceptor.LoginInterceptor;
+import com.xxzd.study.mapper.ChatSessionMapper;
 import com.xxzd.study.service.ChatService;
 import com.xxzd.study.service.LearningProfileService;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,12 @@ public class LoginInterceptorContractTest {
 
     @MockBean
     private LearningProfileService learningProfileService;
+
+    @MockBean
+    private ChatSessionMapper chatSessionMapper;
+
+    @MockBean
+    private AiChatService aiChatService;
 
     @Test
     void apiWithoutLoginReturns401WithExpectedBody() throws Exception {

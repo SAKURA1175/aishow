@@ -3,12 +3,16 @@ package com.xxzd.study.controller;
 import com.xxzd.study.common.ApiResponse;
 import com.xxzd.study.domain.Assignment;
 import com.xxzd.study.domain.AssignmentSubmission;
+import com.xxzd.study.domain.StudyClass;
 import com.xxzd.study.domain.User;
 import com.xxzd.study.mapper.AssignmentMapper;
+import com.xxzd.study.mapper.ClassMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -18,12 +22,23 @@ public class AssignmentController {
     @Resource
     private AssignmentMapper assignmentMapper;
 
+    @Resource
+    private ClassMapper classMapper;
+
     /** 创建/发布作业（教师） */
     @PostMapping("/create")
-    public ApiResponse<?> create(@RequestBody Assignment a, HttpSession session) {
+    public ApiResponse<?> create(@RequestBody Assignment a, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可发布作业");
+        }
+        if (!"admin".equals(user.getRole()) && a.getClassId() != null) {
+            StudyClass sc = classMapper.selectById(a.getClassId());
+            if (sc != null && !user.getId().equals(sc.getTeacherId())) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return ApiResponse.fail("无权向他人班级发布作业");
+            }
         }
         a.setTeacherId(user.getId());
         if (a.getStatus() == null) a.setStatus("published");
@@ -33,11 +48,15 @@ public class AssignmentController {
 
     /** 更新作业 */
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Assignment a, HttpSession session) {
+    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Assignment a, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         Assignment existing = assignmentMapper.selectById(id);
-        if (existing == null || !existing.getTeacherId().equals(user.getId())) {
-            return ApiResponse.fail("无权操作");
+        if (existing == null) {
+            return ApiResponse.fail("作业不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !existing.getTeacherId().equals(user.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权修改该作业");
         }
         a.setId(id);
         assignmentMapper.updateAssignment(a);
@@ -62,8 +81,27 @@ public class AssignmentController {
 
     /** 学生提交作业 */
     @PostMapping("/{assignmentId}/submit")
-    public ApiResponse<?> submit(@PathVariable Long assignmentId, @RequestBody AssignmentSubmission sub, HttpSession session) {
+    public ApiResponse<?> submit(@PathVariable Long assignmentId, @RequestBody AssignmentSubmission sub, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
+        Assignment a = assignmentMapper.selectById(assignmentId);
+        if (a == null) {
+            return ApiResponse.fail("作业不存在");
+        }
+
+        // 校验是否为该班级成员
+        if (!"admin".equals(user.getRole())) {
+            if (a.getClassId() != null && classMapper.selectMember(a.getClassId(), user.getId()) == null) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return ApiResponse.fail("您不是该班级成员，无权提交该作业");
+            }
+        }
+
+        // 校验截止时间
+        if (a.getDueDate() != null && new Date().after(a.getDueDate())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("作业已过截止时间，无法提交");
+        }
+
         AssignmentSubmission existing = assignmentMapper.selectSubmission(assignmentId, user.getId());
         if (existing != null) {
             existing.setContent(sub.getContent());
@@ -79,9 +117,18 @@ public class AssignmentController {
         return ApiResponse.ok("提交成功", sub);
     }
 
-    /** 查看某作业的所有提交（教师） */
+    /** 查看某作业的所有提交（仅作业任课教师或管理员可查看） */
     @GetMapping("/{assignmentId}/submissions")
-    public ApiResponse<List<AssignmentSubmission>> submissions(@PathVariable Long assignmentId) {
+    public ApiResponse<List<AssignmentSubmission>> submissions(@PathVariable Long assignmentId, HttpSession session, HttpServletResponse response) {
+        User user = (User) session.getAttribute("currentUser");
+        Assignment a = assignmentMapper.selectById(assignmentId);
+        if (a == null) {
+            return ApiResponse.fail("作业不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !a.getTeacherId().equals(user.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该作业提交列表");
+        }
         return ApiResponse.ok(assignmentMapper.selectSubmissionsByAssignment(assignmentId));
     }
 
@@ -97,11 +144,31 @@ public class AssignmentController {
     private com.xxzd.study.ai.AiChatService aiChatService;
 
     @PostMapping("/submissions/{subId}/grade")
-    public ApiResponse<?> grade(@PathVariable Long subId, @RequestBody AssignmentSubmission gradeData, HttpSession session) {
+    public ApiResponse<?> grade(@PathVariable Long subId, @RequestBody AssignmentSubmission gradeData, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可批改");
         }
+        AssignmentSubmission sub = assignmentMapper.selectSubmissionById(subId);
+        if (sub == null) {
+            return ApiResponse.fail("提交记录不存在");
+        }
+        Assignment a = assignmentMapper.selectById(sub.getAssignmentId());
+        if (a == null) {
+            return ApiResponse.fail("对应作业不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !a.getTeacherId().equals(user.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权批改该作业");
+        }
+
+        int maxScore = a.getMaxScore() != null ? a.getMaxScore() : 100;
+        Integer score = gradeData.getTeacherScore();
+        if (score == null || score < 0 || score > maxScore) {
+            return ApiResponse.fail("分数必须在 0 到满分(" + maxScore + "分)之间");
+        }
+
         gradeData.setId(subId);
         gradeData.setStatus("graded");
         assignmentMapper.updateSubmission(gradeData);
@@ -110,9 +177,10 @@ public class AssignmentController {
 
     /** AI 智能助教辅助批改 */
     @PostMapping("/submissions/{subId}/ai-grade")
-    public ApiResponse<?> aiGrade(@PathVariable Long subId, HttpSession session) {
+    public ApiResponse<?> aiGrade(@PathVariable Long subId, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可操作 AI 批改");
         }
         AssignmentSubmission sub = assignmentMapper.selectSubmissionById(subId);
@@ -120,6 +188,11 @@ public class AssignmentController {
 
         Assignment a = assignmentMapper.selectById(sub.getAssignmentId());
         if (a == null) return ApiResponse.fail("对应作业不存在");
+
+        if (!"admin".equals(user.getRole()) && !a.getTeacherId().equals(user.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权使用AI批改该作业");
+        }
 
         String prompt = String.format("""
                 你是一位严谨且富有教学热情的大学专业课助教。

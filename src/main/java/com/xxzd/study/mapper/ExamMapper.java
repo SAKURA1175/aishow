@@ -9,7 +9,6 @@ public interface ExamMapper {
     @Insert("INSERT INTO exam(title,course_id,teacher_id,class_id,duration,total_score,status,start_time,end_time) VALUES(#{title},#{courseId},#{teacherId},#{classId},#{duration},#{totalScore},#{status},#{startTime},#{endTime})")
     @Options(useGeneratedKeys=true, keyProperty="id")
     void insertExam(Exam e);
-    @Update("UPDATE exam SET title=#{title},duration=#{duration},total_score=#{totalScore},status=#{status},start_time=#{startTime},end_time=#{endTime} WHERE id=#{id}")
     void updateExam(Exam e);
     @Select("SELECT e.*,u.username as teacher_name,(SELECT COUNT(*) FROM exam_question WHERE exam_id=e.id) as question_count,(SELECT COUNT(*) FROM exam_submission WHERE exam_id=e.id) as submission_count FROM exam e LEFT JOIN user u ON e.teacher_id=u.id WHERE e.id=#{id}")
     Exam selectById(Long id);
@@ -24,6 +23,8 @@ public interface ExamMapper {
     void updateQuestion(ExamQuestion q);
     @Delete("DELETE FROM exam_question WHERE id=#{id}")
     void deleteQuestion(Long id);
+    @Select("SELECT * FROM exam_question WHERE id=#{id}")
+    ExamQuestion selectQuestionById(Long id);
     @Select("SELECT * FROM exam_question WHERE exam_id=#{examId} ORDER BY sort_order")
     List<ExamQuestion> selectQuestions(Long examId);
     @Insert("INSERT INTO exam_submission(exam_id,student_id,status) VALUES(#{examId},#{studentId},'in_progress')")

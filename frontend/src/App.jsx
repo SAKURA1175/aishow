@@ -32,7 +32,7 @@ export default function App() {
         <Route
           path="/screen-view"
           element={
-            <ProtectedRoute roles={['teacher', 'admin']}>
+            <ProtectedRoute roles={['admin', 'teacher']}>
               <ScreenDashboard />
             </ProtectedRoute>
           }
@@ -65,7 +65,7 @@ export default function App() {
           <Route
             path="screen"
             element={
-              <ProtectedRoute roles={['teacher', 'admin']}>
+              <ProtectedRoute roles={['admin', 'teacher']}>
                 <ScreenDashboard />
               </ProtectedRoute>
             }
@@ -73,7 +73,7 @@ export default function App() {
           <Route
             path="admin"
             element={
-              <ProtectedRoute roles={['teacher', 'admin']}>
+              <ProtectedRoute roles={['admin']}>
                 <Admin />
               </ProtectedRoute>
             }

@@ -6,6 +6,7 @@ import com.xxzd.study.domain.Grade;
 import com.xxzd.study.domain.User;
 import com.xxzd.study.mapper.GradeMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +26,10 @@ public class GradeController {
     // ===== 课程管理 =====
 
     @PostMapping("/course")
-    public ApiResponse<?> createCourse(@RequestBody Course course, HttpSession session) {
+    public ApiResponse<?> createCourse(@RequestBody Course course, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可创建课程");
         }
         course.setTeacherId(user.getId());
@@ -44,10 +46,30 @@ public class GradeController {
     // ===== 成绩管理 =====
 
     @PostMapping("/record")
-    public ApiResponse<?> addGrade(@RequestBody Grade grade, HttpSession session) {
+    public ApiResponse<?> addGrade(@RequestBody Grade grade, HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (!"teacher".equals(user.getRole()) && !"admin".equals(user.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可录入成绩");
+        }
+        if (grade.getCourseId() == null) {
+            return ApiResponse.fail("课程ID不能为空");
+        }
+        Course course = gradeMapper.selectCourseById(grade.getCourseId());
+        if (course == null) {
+            return ApiResponse.fail("指定课程不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !user.getId().equals(course.getTeacherId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权为他人课程录入成绩");
+        }
+        if (grade.getScore() != null) {
+            if (grade.getScore().compareTo(BigDecimal.ZERO) < 0 || grade.getScore().compareTo(new BigDecimal(100)) > 0) {
+                return ApiResponse.fail("成绩必须在 0 到 100 之间");
+            }
+        }
+        if (grade.getGradeType() == null || grade.getGradeType().isBlank()) {
+            grade.setGradeType("final");
         }
         // 自动计算绩点（4.0制）
         if (grade.getScore() != null && grade.getGradePoint() == null) {
@@ -58,7 +80,26 @@ public class GradeController {
     }
 
     @PutMapping("/record/{id}")
-    public ApiResponse<?> updateGrade(@PathVariable Long id, @RequestBody Grade grade) {
+    public ApiResponse<?> updateGrade(@PathVariable Long id, @RequestBody Grade grade, HttpSession session, HttpServletResponse response) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return ApiResponse.fail("请先登录");
+        }
+        Grade existing = gradeMapper.selectGradeById(id);
+        if (existing == null) {
+            return ApiResponse.fail("成绩记录不存在");
+        }
+        Course course = gradeMapper.selectCourseById(existing.getCourseId());
+        if (!"admin".equals(user.getRole()) && (course == null || !user.getId().equals(course.getTeacherId()))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权修改该成绩");
+        }
+        if (grade.getScore() != null) {
+            if (grade.getScore().compareTo(BigDecimal.ZERO) < 0 || grade.getScore().compareTo(new BigDecimal(100)) > 0) {
+                return ApiResponse.fail("成绩必须在 0 到 100 之间");
+            }
+        }
         grade.setId(id);
         if (grade.getScore() != null && grade.getGradePoint() == null) {
             grade.setGradePoint(calculateGradePoint(grade.getScore()));
@@ -68,7 +109,21 @@ public class GradeController {
     }
 
     @DeleteMapping("/record/{id}")
-    public ApiResponse<?> deleteGrade(@PathVariable Long id) {
+    public ApiResponse<?> deleteGrade(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return ApiResponse.fail("请先登录");
+        }
+        Grade existing = gradeMapper.selectGradeById(id);
+        if (existing == null) {
+            return ApiResponse.fail("成绩记录不存在");
+        }
+        Course course = gradeMapper.selectCourseById(existing.getCourseId());
+        if (!"admin".equals(user.getRole()) && (course == null || !user.getId().equals(course.getTeacherId()))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权删除该成绩");
+        }
         gradeMapper.deleteGrade(id);
         return ApiResponse.ok("删除成功");
     }
@@ -107,9 +162,22 @@ public class GradeController {
         return ApiResponse.ok(result);
     }
 
-    /** 某课程成绩（教师查看） */
+    /** 某课程成绩（仅任课教师或管理员可查看） */
     @GetMapping("/course/{courseId}")
-    public ApiResponse<List<Grade>> courseGrades(@PathVariable Long courseId) {
+    public ApiResponse<List<Grade>> courseGrades(@PathVariable Long courseId, HttpSession session, HttpServletResponse response) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return ApiResponse.fail("请先登录");
+        }
+        Course course = gradeMapper.selectCourseById(courseId);
+        if (course == null) {
+            return ApiResponse.fail("课程不存在");
+        }
+        if (!"admin".equals(user.getRole()) && !user.getId().equals(course.getTeacherId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该课程成绩名册");
+        }
         return ApiResponse.ok(gradeMapper.selectGradesByCourse(courseId));
     }
 

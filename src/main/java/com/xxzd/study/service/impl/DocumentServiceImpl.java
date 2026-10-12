@@ -113,6 +113,19 @@ public class DocumentServiceImpl implements DocumentService {
             insertList.add(c);
         }
         documentChunkMapper.insertBatch(insertList);
+        documentMapper.updateChunkReady(documentId, insertList.size(), extracted.length(), fileTypeOf(filename));
+    }
+
+    private String fileTypeOf(String filename) {
+        if (filename == null) {
+            return null;
+        }
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot >= filename.length() - 1) {
+            return null;
+        }
+        String ext = filename.substring(dot + 1).toLowerCase();
+        return ext.length() > 20 ? ext.substring(0, 20) : ext;
     }
 
     private String extractText(java.io.InputStream inputStream, String filename) {

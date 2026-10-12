@@ -30,6 +30,7 @@ public class TodoController {
         todo.setUserId(user.getId());
         if (todo.getStatus() == null) todo.setStatus("pending");
         if (todo.getSourceType() == null) todo.setSourceType("manual");
+        if (todo.getPriority() == null) todo.setPriority(2);
         todoMapper.insertTodo(todo);
         return ApiResponse.ok("创建成功", todo);
     }

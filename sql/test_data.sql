@@ -1,7 +1,7 @@
 USE `study_ai`;
 
 -- 班级 8个
-INSERT INTO class(name,description,teacher_id,invite_code,semester,status) VALUES
+INSERT IGNORE INTO class(name,description,teacher_id,invite_code,semester,status) VALUES
 ('Java高级班','面向对象与设计模式',6,'JV2025','2025春','active'),
 ('Python数据分析','数据处理与可视化',6,'PY2025','2025春','active'),
 ('Web前端开发','React/Vue实战',6,'WE2025','2025春','active'),
@@ -408,17 +408,17 @@ SELECT e.id,9,'{"1":"B","2":"对","3":"隔离性","4":"函数、类型转换、l
 SELECT e.id,10,'{"1":"B","2":"对","3":"Isolation","4":"跳过联合索引最左列"}',64,'英文答案可接受，简答覆盖点偏少。','graded','2025-05-08 14:08:00','2025-05-08 15:00:00' FROM exam e WHERE e.title='演示数据库建模测验';
 
 -- 知识库/历史/星图：让文档、历史会话、学习画像面板不空
-INSERT INTO document(name,uploader_id,stored_filename) VALUES
-('Java项目实战讲义.md',2,'seed/java-project-guide.md'),
-('RAG知识库实验说明.md',2,'seed/rag-lab-guide.md'),
-('数据库建模案例.pdf',2,'seed/database-modeling-case.pdf'),
-('期中复习清单.md',3,'seed/midterm-review-list.md');
+INSERT INTO document(filename,uploader_id,stored_filename,file_type,char_count,chunk_count,status) VALUES
+('Java项目实战讲义.md',2,'seed/java-project-guide.md','md',42,1,'ready'),
+('RAG知识库实验说明.md',2,'seed/rag-lab-guide.md','md',36,1,'ready'),
+('数据库建模案例.pdf',2,'seed/database-modeling-case.pdf','pdf',48,1,'ready'),
+('期中复习清单.md',3,'seed/midterm-review-list.md','md',40,1,'ready');
 
 INSERT INTO document_chunk(document_id,content,chunk_index)
-SELECT d.id,'Java项目分层建议：Controller 负责请求响应适配，Service 封装业务流程，Mapper 只处理数据库访问。',0 FROM document d WHERE d.name='Java项目实战讲义.md' UNION ALL
-SELECT d.id,'RAG实验建议记录问题、命中文档、答案依据、是否幻觉和改进措施。',0 FROM document d WHERE d.name='RAG知识库实验说明.md' UNION ALL
-SELECT d.id,'数据库建模案例包含学生、课程、教师、选课记录四类实体，并通过选课记录拆解多对多关系。',0 FROM document d WHERE d.name='数据库建模案例.pdf' UNION ALL
-SELECT d.id,'期中复习清单：Java集合、Spring接口、SQL连接查询、事务隔离、RAG基础概念。',0 FROM document d WHERE d.name='期中复习清单.md';
+SELECT d.id,'Java项目分层建议：Controller 负责请求响应适配，Service 封装业务流程，Mapper 只处理数据库访问。',0 FROM document d WHERE d.filename='Java项目实战讲义.md' UNION ALL
+SELECT d.id,'RAG实验建议记录问题、命中文档、答案依据、是否幻觉和改进措施。',0 FROM document d WHERE d.filename='RAG知识库实验说明.md' UNION ALL
+SELECT d.id,'数据库建模案例包含学生、课程、教师、选课记录四类实体，并通过选课记录拆解多对多关系。',0 FROM document d WHERE d.filename='数据库建模案例.pdf' UNION ALL
+SELECT d.id,'期中复习清单：Java集合、Spring接口、SQL连接查询、事务隔离、RAG基础概念。',0 FROM document d WHERE d.filename='期中复习清单.md';
 
 INSERT INTO chat_session(user_id,title) VALUES
 (3,'Java项目分层答疑'),
@@ -492,10 +492,10 @@ INSERT INTO user_question_log(user_id,question,topic,session_id) VALUES
 (2,'数据库训练营怎么安排索引实验？','数据库',(SELECT id FROM chat_session WHERE title='数据库训练营备课' AND user_id=2 ORDER BY id DESC LIMIT 1)),
 (2,'Java项目讲评要重点看哪些问题？','Java',(SELECT id FROM chat_session WHERE title='Java项目讲评准备' AND user_id=2 ORDER BY id DESC LIMIT 1));
 
-INSERT INTO learning_profile(user_id,weak_topics,strong_topics,suggestion) VALUES
-(3,'数据库','Java','你在数据库相关问题上提问较多，建议重点复习事务隔离、索引失效和范式设计；Java 项目分层掌握较好，可以继续做综合项目。'),
-(2,'AI应用','Java','教师端最近围绕 AI 应用与数据库训练营备课较多，可把 RAG 课堂练习和索引实验沉淀为可复用教案。')
-ON DUPLICATE KEY UPDATE weak_topics=VALUES(weak_topics), strong_topics=VALUES(strong_topics), suggestion=VALUES(suggestion);
+INSERT INTO learning_profile(user_id, topic_data) VALUES
+(3, '{"weakTopics":"数据库","strongTopics":"Java","suggestion":"你在数据库相关问题上提问较多，建议重点复习事务隔离、索引失效和范式设计；Java 项目分层掌握较好，可以继续做综合项目。"}'),
+(2, '{"weakTopics":"AI应用","strongTopics":"Java","suggestion":"教师端最近围绕 AI 应用与数据库训练营备课较多，可把 RAG 课堂练习和索引实验沉淀为可复用教案。"}')
+ON DUPLICATE KEY UPDATE topic_data=VALUES(topic_data);
 
 -- ============================================================
 -- 学科学情大屏全量真实业务模拟数据

@@ -5,6 +5,7 @@ import com.xxzd.study.domain.PostReply;
 import com.xxzd.study.domain.User;
 import com.xxzd.study.mapper.PostMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
@@ -20,17 +21,29 @@ public class PostController {
         p.setUserId(u.getId()); mapper.insertPost(p); return ApiResponse.ok("发布成功", p);
     }
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Post p, HttpSession session) {
+    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Post p, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         Post ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("帖子不存在");
+        boolean isAuthor = ex.getUserId().equals(u.getId());
+        boolean isAdmin = "admin".equals(u.getRole());
+        if (!isAuthor && !isAdmin) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         p.setId(id); mapper.updatePost(p); return ApiResponse.ok("更新成功");
     }
     @DeleteMapping("/{id}")
-    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session) {
+    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         Post ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("帖子不存在");
+        boolean isAuthor = ex.getUserId().equals(u.getId());
+        boolean isAdmin = "admin".equals(u.getRole());
+        if (!isAuthor && !isAdmin) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         mapper.deletePost(id); return ApiResponse.ok("删除成功");
     }
     @GetMapping

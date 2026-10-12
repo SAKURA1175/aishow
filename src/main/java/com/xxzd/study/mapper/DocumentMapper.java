@@ -14,4 +14,9 @@ public interface DocumentMapper {
     int deleteById(Long id);
 
     int updateStoredFilename(@Param("id") Long id, @Param("storedFilename") String storedFilename);
+
+    int updateChunkReady(@Param("id") Long id,
+                          @Param("chunkCount") int chunkCount,
+                          @Param("charCount") int charCount,
+                          @Param("fileType") String fileType);
 }

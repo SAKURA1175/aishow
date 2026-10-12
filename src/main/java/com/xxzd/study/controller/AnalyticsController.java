@@ -3,6 +3,7 @@ package com.xxzd.study.controller;
 import com.xxzd.study.common.ApiResponse;
 import com.xxzd.study.domain.User;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -24,41 +25,31 @@ public class AnalyticsController {
      * 获取当前用户有权查看的班级列表及班级关联学科
      */
     @GetMapping("/classes")
-    public ApiResponse<?> getAccessibleClasses(HttpSession session) {
+    public ApiResponse<?> getAccessibleClasses(HttpSession session, HttpServletResponse response) {
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return ApiResponse.fail("未登录");
         }
         boolean isAdmin = "admin".equals(user.getRole());
         boolean isTeacher = "teacher".equals(user.getRole());
-
         if (!isAdmin && !isTeacher) {
-            return ApiResponse.fail("仅教师和管理员可访问学情大屏");
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权访问学情大屏");
         }
 
-        String sql;
+        String sql = """
+            SELECT c.id, c.name, c.teacher_id, c.semester, c.status,
+                   u.username AS teacher_name,
+                   (SELECT COUNT(*) FROM class_member cm WHERE cm.class_id = c.id AND cm.role = 'student') AS student_count
+            FROM class c
+            LEFT JOIN user u ON c.teacher_id = u.id
+            """;
         List<Map<String, Object>> classList;
         if (isAdmin) {
-            sql = """
-                SELECT c.id, c.name, c.teacher_id, c.semester, c.status,
-                       u.username AS teacher_name,
-                       (SELECT COUNT(*) FROM class_member cm WHERE cm.class_id = c.id AND cm.role = 'student') AS student_count
-                FROM class c
-                LEFT JOIN user u ON c.teacher_id = u.id
-                ORDER BY c.id
-                """;
-            classList = jdbcTemplate.queryForList(sql);
+            classList = jdbcTemplate.queryForList(sql + " ORDER BY c.id");
         } else {
-            sql = """
-                SELECT c.id, c.name, c.teacher_id, c.semester, c.status,
-                       u.username AS teacher_name,
-                       (SELECT COUNT(*) FROM class_member cm WHERE cm.class_id = c.id AND cm.role = 'student') AS student_count
-                FROM class c
-                LEFT JOIN user u ON c.teacher_id = u.id
-                WHERE c.teacher_id = ?
-                ORDER BY c.id
-                """;
-            classList = jdbcTemplate.queryForList(sql, user.getId());
+            classList = jdbcTemplate.queryForList(sql + " WHERE c.teacher_id = ? ORDER BY c.id", user.getId());
         }
 
         for (Map<String, Object> cls : classList) {
@@ -72,7 +63,7 @@ public class AnalyticsController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("classes", classList);
-        result.put("isAdmin", isAdmin);
+        result.put("isAdmin", "admin".equals(user.getRole()));
         result.put("totalCount", classList.size());
         return ApiResponse.ok(result);
     }
@@ -84,51 +75,60 @@ public class AnalyticsController {
     public ApiResponse<?> getScreenData(
             @RequestParam(required = false) Long classId,
             @RequestParam(required = false) Long courseId,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletResponse response) {
 
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return ApiResponse.fail("未登录");
         }
         boolean isAdmin = "admin".equals(user.getRole());
         boolean isTeacher = "teacher".equals(user.getRole());
         if (!isAdmin && !isTeacher) {
-            return ApiResponse.fail("无权查看学情大屏");
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权访问学情大屏");
         }
 
-        // 1. 定位分析班级
+        // 1. 定位分析班级：管理员可看任意班；教师只能看自己任课的班
         Map<String, Object> selectedClass = null;
         if (classId != null && classId > 0) {
             List<Map<String, Object>> found = jdbcTemplate.queryForList(
                 "SELECT c.*, u.username as teacher_name FROM class c LEFT JOIN user u ON c.teacher_id = u.id WHERE c.id = ?",
                 classId
             );
-            if (!found.isEmpty()) {
-                selectedClass = found.get(0);
+            if (found.isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return ApiResponse.fail("无权查看该班级学情");
             }
-        }
-
-        if (selectedClass == null) {
-            List<Map<String, Object>> defaultList;
-            if (isAdmin) {
-                defaultList = jdbcTemplate.queryForList(
-                    "SELECT c.*, u.username as teacher_name FROM class c LEFT JOIN user u ON c.teacher_id = u.id ORDER BY c.id LIMIT 1"
-                );
-            } else {
-                defaultList = jdbcTemplate.queryForList(
-                    "SELECT c.*, u.username as teacher_name FROM class c LEFT JOIN user u ON c.teacher_id = u.id WHERE c.teacher_id = ? ORDER BY c.id LIMIT 1",
-                    user.getId()
-                );
+            selectedClass = found.get(0);
+        } else if (isAdmin) {
+            List<Map<String, Object>> defaultList = jdbcTemplate.queryForList(
+                "SELECT c.*, u.username as teacher_name FROM class c LEFT JOIN user u ON c.teacher_id = u.id ORDER BY c.id LIMIT 1"
+            );
+            if (!defaultList.isEmpty()) {
+                selectedClass = defaultList.get(0);
+                classId = ((Number) selectedClass.get("id")).longValue();
             }
+        } else {
+            List<Map<String, Object>> defaultList = jdbcTemplate.queryForList(
+                "SELECT c.*, u.username as teacher_name FROM class c LEFT JOIN user u ON c.teacher_id = u.id WHERE c.teacher_id = ? ORDER BY c.id LIMIT 1",
+                user.getId()
+            );
             if (!defaultList.isEmpty()) {
                 selectedClass = defaultList.get(0);
                 classId = ((Number) selectedClass.get("id")).longValue();
             }
         }
 
-        Long finalClassId = (selectedClass != null) ? ((Number) selectedClass.get("id")).longValue() : 1L;
-        String className = (selectedClass != null) ? (String) selectedClass.get("name") : "未命名班级";
-        String teacherName = (selectedClass != null) ? (String) selectedClass.get("teacher_name") : "未指定教师";
+        if (selectedClass == null || !canViewClass(user, selectedClass)) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该班级学情");
+        }
+
+        Long finalClassId = ((Number) selectedClass.get("id")).longValue();
+        String className = selectedClass.get("name") != null ? String.valueOf(selectedClass.get("name")) : "未命名班级";
+        String teacherName = selectedClass.get("teacher_name") != null ? String.valueOf(selectedClass.get("teacher_name")) : "未指定教师";
 
         // 2. 真实在册学生数
         Integer studentCount = jdbcTemplate.queryForObject(
@@ -264,7 +264,11 @@ public class AnalyticsController {
 
         int sub90 = 0, sub75 = 0, sub60 = 0, subFail = 0;
         for (Map<String, Object> sr : submissionRows) {
-            int sc = ((Number) sr.get("score")).intValue();
+            Object scoreObj = sr.get("score");
+            if (!(scoreObj instanceof Number scoreNum)) {
+                continue;
+            }
+            int sc = scoreNum.intValue();
             if (sc >= 90) sub90++;
             else if (sc >= 75) sub75++;
             else if (sc >= 60) sub60++;
@@ -337,12 +341,16 @@ public class AnalyticsController {
             WHERE e.class_id = ? OR es.student_id IN (SELECT user_id FROM class_member WHERE class_id = ?)
             """, Double.class, finalClassId, finalClassId);
         if (!examScores.isEmpty()) {
-            avgExam = Math.round((examScores.stream().mapToDouble(Double::doubleValue).average().orElse(85.0)) * 10.0) / 10.0;
+            avgExam = Math.round((examScores.stream().filter(Objects::nonNull).mapToDouble(Double::doubleValue).average().orElse(85.0)) * 10.0) / 10.0;
         }
 
         double avgAssign = 86.0;
         if (!submissionRows.isEmpty()) {
-            avgAssign = Math.round((submissionRows.stream().mapToDouble(r -> ((Number) r.get("score")).doubleValue()).average().orElse(86.0)) * 10.0) / 10.0;
+            avgAssign = Math.round((submissionRows.stream()
+                    .map(r -> (Number) r.get("score"))
+                    .filter(Objects::nonNull)
+                    .mapToDouble(Number::doubleValue)
+                    .average().orElse(86.0)) * 10.0) / 10.0;
         }
 
         List<Map<String, Object>> radarCapabilities = Arrays.asList(
@@ -482,6 +490,17 @@ public class AnalyticsController {
         data.put("topStudents", topStudents);                         // 11. 卓越学霸榜单
 
         return ApiResponse.ok(data);
+    }
+
+    /** 管理员，或 classId 对应班级的 teacherId 等于当前用户。 */
+    private boolean canViewClass(User user, Map<String, Object> selectedClass) {
+        if ("admin".equals(user.getRole())) {
+            return true;
+        }
+        Object teacherId = selectedClass.get("teacher_id");
+        return teacherId instanceof Number
+                && user.getId() != null
+                && user.getId().equals(((Number) teacherId).longValue());
     }
 
     private Map<String, Object> buildTierItem(String name, int count, int total, String color) {

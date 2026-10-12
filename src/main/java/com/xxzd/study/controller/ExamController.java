@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xxzd.study.ai.AiChatService;
 import com.xxzd.study.common.ApiResponse;
 import com.xxzd.study.domain.*;
+import com.xxzd.study.mapper.ClassMapper;
 import com.xxzd.study.mapper.ExamMapper;
 import com.xxzd.study.mapper.WrongQuestionMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +21,7 @@ import java.util.*;
 public class ExamController {
 
     @Resource private ExamMapper mapper;
+    @Resource private ClassMapper classMapper;
     @Resource private AiChatService aiChatService;
     @Resource private WrongQuestionMapper wrongQuestionMapper;
 
@@ -27,9 +30,25 @@ public class ExamController {
     // ===== CRUD =====
 
     @PostMapping
-    public ApiResponse<?> create(@RequestBody Exam e, HttpSession session) {
+    public ApiResponse<?> create(@RequestBody Exam e, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
-        if (!"teacher".equals(u.getRole()) && !"admin".equals(u.getRole())) return ApiResponse.fail("仅教师可创建");
+        if (!"teacher".equals(u.getRole()) && !"admin".equals(u.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("仅教师可创建");
+        }
+        if (!"admin".equals(u.getRole()) && e.getClassId() != null) {
+            StudyClass sc = classMapper.selectById(e.getClassId());
+            if (sc != null && !u.getId().equals(sc.getTeacherId())) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return ApiResponse.fail("无权为他人班级创建考试");
+            }
+        }
+        if (e.getTitle() == null || e.getTitle().isBlank()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return ApiResponse.fail("考试标题不能为空");
+        }
+        if (e.getDuration() == null) e.setDuration(60);
+        if (e.getTotalScore() == null) e.setTotalScore(100);
         e.setTeacherId(u.getId());
         if (e.getStatus() == null) e.setStatus("draft");
         mapper.insertExam(e);
@@ -37,7 +56,16 @@ public class ExamController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Exam e) {
+    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Exam e, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        Exam existing = mapper.selectById(id);
+        if (existing == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+        if (!"admin".equals(u.getRole()) && !existing.getTeacherId().equals(u.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权修改该考试");
+        }
         e.setId(id);
         mapper.updateExam(e);
         return ApiResponse.ok("更新成功");
@@ -78,21 +106,52 @@ public class ExamController {
     // ===== 题目管理 =====
 
     @PostMapping("/{id}/question")
-    public ApiResponse<?> addQuestion(@PathVariable Long id, @RequestBody ExamQuestion q) {
+    public ApiResponse<?> addQuestion(@PathVariable Long id, @RequestBody ExamQuestion q, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        Exam existing = mapper.selectById(id);
+        if (existing == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+        if (!"admin".equals(u.getRole()) && !existing.getTeacherId().equals(u.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权为该考试添加题目");
+        }
         q.setExamId(id);
+        if (q.getSortOrder() == null) q.setSortOrder(0);
+        if (q.getScore() == null) q.setScore(10);
         mapper.insertQuestion(q);
         return ApiResponse.ok("添加成功", q);
     }
 
     @PutMapping("/question/{qid}")
-    public ApiResponse<?> updateQuestion(@PathVariable Long qid, @RequestBody ExamQuestion q) {
+    public ApiResponse<?> updateQuestion(@PathVariable Long qid, @RequestBody ExamQuestion q, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        ExamQuestion qExisting = mapper.selectQuestionById(qid);
+        if (qExisting == null) {
+            return ApiResponse.fail("题目不存在");
+        }
+        Exam existing = mapper.selectById(qExisting.getExamId());
+        if (!"admin".equals(u.getRole()) && (existing == null || !existing.getTeacherId().equals(u.getId()))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权修改该题目");
+        }
         q.setId(qid);
         mapper.updateQuestion(q);
         return ApiResponse.ok("更新成功");
     }
 
     @DeleteMapping("/question/{qid}")
-    public ApiResponse<?> deleteQuestion(@PathVariable Long qid) {
+    public ApiResponse<?> deleteQuestion(@PathVariable Long qid, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        ExamQuestion qExisting = mapper.selectQuestionById(qid);
+        if (qExisting == null) {
+            return ApiResponse.fail("题目不存在");
+        }
+        Exam existing = mapper.selectById(qExisting.getExamId());
+        if (!"admin".equals(u.getRole()) && (existing == null || !existing.getTeacherId().equals(u.getId()))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权删除该题目");
+        }
         mapper.deleteQuestion(qid);
         return ApiResponse.ok("删除成功");
     }
@@ -150,10 +209,20 @@ public class ExamController {
     """;
 
     @PostMapping("/{id}/ai-generate")
-    public ApiResponse<?> aiGenerate(@PathVariable Long id, @RequestBody Map<String, Object> params, HttpSession session) {
+    public ApiResponse<?> aiGenerate(@PathVariable Long id, @RequestBody Map<String, Object> params, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
-        if (!"teacher".equals(u.getRole()) && !"admin".equals(u.getRole()))
+        if (!"teacher".equals(u.getRole()) && !"admin".equals(u.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return ApiResponse.fail("仅教师可操作");
+        }
+        Exam existing = mapper.selectById(id);
+        if (existing == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+        if (!"admin".equals(u.getRole()) && !existing.getTeacherId().equals(u.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权为该考试AI生成题目");
+        }
 
         String subject = (String) params.getOrDefault("subject", "综合");
         String knowledgePoints = (String) params.getOrDefault("knowledgePoints", "");
@@ -212,12 +281,30 @@ public class ExamController {
     // ===== 学生提交 + 自动判卷 + 错题录入 =====
 
     @PostMapping("/{id}/submit")
-    public ApiResponse<?> submit(@PathVariable Long id, @RequestBody ExamSubmission s, HttpSession session) {
+    public ApiResponse<?> submit(@PathVariable Long id, @RequestBody ExamSubmission s, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
+        Exam exam = mapper.selectById(id);
+        if (exam == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+
+        // 校验是否为班级成员
+        if (!"admin".equals(u.getRole())) {
+            if (exam.getClassId() != null && classMapper.selectMember(exam.getClassId(), u.getId()) == null) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                return ApiResponse.fail("您不是该班级成员，无权参加并提交该考试");
+            }
+        }
+
+        // 校验是否已交卷（锁定不可重复交卷）
+        ExamSubmission existing = mapper.selectSubmission(id, u.getId());
+        if (existing != null) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("该考试已提交，禁止重复交卷");
+        }
 
         // 获取题目和标准答案
         List<ExamQuestion> questions = mapper.selectQuestions(id);
-        Exam exam = mapper.selectById(id);
 
         // 解析学生答案 JSON: { "questionId": "studentAnswer", ... }
         Map<String, String> studentAnswers;
@@ -254,7 +341,6 @@ public class ExamController {
         }
 
         // 保存提交
-        ExamSubmission existing = mapper.selectSubmission(id, u.getId());
         String feedbackJson;
         try {
             feedbackJson = objectMapper.writeValueAsString(gradeDetails);
@@ -262,20 +348,12 @@ public class ExamController {
             feedbackJson = "[]";
         }
 
-        if (existing == null) {
-            s.setExamId(id);
-            s.setStudentId(u.getId());
-            s.setScore(totalScore);
-            s.setAiFeedback(feedbackJson);
-            s.setStatus("graded");
-            mapper.insertSubmission(s);
-        } else {
-            existing.setAnswers(s.getAnswers());
-            existing.setScore(totalScore);
-            existing.setAiFeedback(feedbackJson);
-            existing.setStatus("graded");
-            mapper.updateSubmission(existing);
-        }
+        s.setExamId(id);
+        s.setStudentId(u.getId());
+        s.setScore(totalScore);
+        s.setAiFeedback(feedbackJson);
+        s.setStatus("graded");
+        mapper.insertSubmission(s);
 
         // 错题自动录入
         for (ExamQuestion wq : wrongQuestions) {
@@ -307,14 +385,31 @@ public class ExamController {
     // ===== 成绩统计 =====
 
     @GetMapping("/{id}/submissions")
-    public ApiResponse<?> submissions(@PathVariable Long id) {
+    public ApiResponse<?> submissions(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        Exam exam = mapper.selectById(id);
+        if (exam == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+        if (!"admin".equals(u.getRole()) && !exam.getTeacherId().equals(u.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该考试提交列表");
+        }
         return ApiResponse.ok(mapper.selectSubmissions(id));
     }
 
     @GetMapping("/{id}/stats")
-    public ApiResponse<?> stats(@PathVariable Long id) {
-        List<ExamSubmission> submissions = mapper.selectSubmissions(id);
+    public ApiResponse<?> stats(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
         Exam exam = mapper.selectById(id);
+        if (exam == null) {
+            return ApiResponse.fail("考试不存在");
+        }
+        if (!"admin".equals(u.getRole()) && !exam.getTeacherId().equals(u.getId())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该考试统计数据");
+        }
+        List<ExamSubmission> submissions = mapper.selectSubmissions(id);
 
         int count = submissions.size();
         double avgScore = submissions.stream().mapToInt(s -> s.getScore() != null ? s.getScore() : 0).average().orElse(0);

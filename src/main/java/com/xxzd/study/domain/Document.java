@@ -14,6 +14,14 @@ public class Document {
 
     private String storedFilename;
 
+    private String fileType;
+
+    private Integer charCount;
+
+    private Integer chunkCount;
+
+    private String status;
+
     public Long getId() {
         return id;
     }
@@ -52,5 +60,37 @@ public class Document {
 
     public void setStoredFilename(String storedFilename) {
         this.storedFilename = storedFilename;
+    }
+
+    public String getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    public Integer getCharCount() {
+        return charCount;
+    }
+
+    public void setCharCount(Integer charCount) {
+        this.charCount = charCount;
+    }
+
+    public Integer getChunkCount() {
+        return chunkCount;
+    }
+
+    public void setChunkCount(Integer chunkCount) {
+        this.chunkCount = chunkCount;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

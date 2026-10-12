@@ -25,6 +25,8 @@ public interface GradeMapper {
 
     void deleteGrade(Long id);
 
+    Grade selectGradeById(Long id);
+
     List<Grade> selectGradesByUser(@Param("userId") Long userId, @Param("semester") String semester);
 
     List<Grade> selectGradesByCourse(Long courseId);

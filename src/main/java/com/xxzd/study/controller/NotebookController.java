@@ -4,6 +4,7 @@ import com.xxzd.study.domain.Notebook;
 import com.xxzd.study.domain.User;
 import com.xxzd.study.mapper.NotebookMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -18,21 +19,43 @@ public class NotebookController {
         mapper.insert(n); return ApiResponse.ok("创建成功", n);
     }
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Notebook n, HttpSession session) {
+    public ApiResponse<?> update(@PathVariable Long id, @RequestBody Notebook n, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         Notebook ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("笔记不存在");
+        if (!ex.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         n.setId(id); mapper.update(n); return ApiResponse.ok("更新成功");
     }
     @DeleteMapping("/{id}")
-    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session) {
+    public ApiResponse<?> delete(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
         User u = (User) session.getAttribute("currentUser");
         Notebook ex = mapper.selectById(id);
-        if(ex==null||!ex.getUserId().equals(u.getId())) return ApiResponse.fail("无权操作");
+        if (ex == null) return ApiResponse.fail("笔记不存在");
+        if (!ex.getUserId().equals(u.getId()) && !"admin".equals(u.getRole())) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权操作");
+        }
         mapper.delete(id); return ApiResponse.ok("删除成功");
     }
     @GetMapping("/{id}")
-    public ApiResponse<Notebook> detail(@PathVariable Long id) { return ApiResponse.ok(mapper.selectById(id)); }
+    public ApiResponse<Notebook> detail(@PathVariable Long id, HttpSession session, HttpServletResponse response) {
+        User u = (User) session.getAttribute("currentUser");
+        Notebook n = mapper.selectById(id);
+        if (n == null) {
+            return ApiResponse.fail("笔记不存在");
+        }
+        boolean isOwner = u != null && u.getId().equals(n.getUserId());
+        boolean isShared = Boolean.TRUE.equals(n.getIsShared());
+        boolean isAdmin = u != null && "admin".equals(u.getRole());
+        if (!isOwner && !isShared && !isAdmin) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            return ApiResponse.fail("无权查看该私密笔记");
+        }
+        return ApiResponse.ok(n);
+    }
     @GetMapping("/my")
     public ApiResponse<List<Notebook>> my(HttpSession session) {
         User u = (User) session.getAttribute("currentUser"); return ApiResponse.ok(mapper.selectByUser(u.getId()));
