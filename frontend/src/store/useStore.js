@@ -12,7 +12,9 @@ const useStore = create(
       setUser: (user) => set({ user }),
       clearUser: () => set({ user: null, sessions: [], currentSessionId: null }),
       setSessions: (sessions) => set({ sessions }),
-      setCurrentSessionId: (currentSessionId) => set({ currentSessionId }),
+      setCurrentSessionId: (currentSessionId) => set((state) => ({
+        currentSessionId: typeof currentSessionId === 'function' ? currentSessionId(state.currentSessionId) : currentSessionId
+      })),
       loadSessions: async () => {
         try {
           const res = await listSessions()

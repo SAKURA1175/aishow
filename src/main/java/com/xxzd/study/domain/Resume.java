@@ -10,10 +10,16 @@ public class Resume {
     private String fileType;      // pdf / docx / txt
     private String rawText;
     private String structuredJson;
+    private String targetRole;
+    private String gapAnalysis;
+    private String canvaData;
     private String analysisJson;
     private Integer score;        // 0-100
     private Date createTime;
     private Date updateTime;
+
+    public String getCanvaData() { return canvaData; }
+    public void setCanvaData(String canvaData) { this.canvaData = canvaData; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -32,6 +38,12 @@ public class Resume {
 
     public String getStructuredJson() { return structuredJson; }
     public void setStructuredJson(String structuredJson) { this.structuredJson = structuredJson; }
+
+    public String getTargetRole() { return targetRole; }
+    public void setTargetRole(String targetRole) { this.targetRole = targetRole; }
+
+    public String getGapAnalysis() { return gapAnalysis; }
+    public void setGapAnalysis(String gapAnalysis) { this.gapAnalysis = gapAnalysis; }
 
     public String getAnalysisJson() { return analysisJson; }
     public void setAnalysisJson(String analysisJson) { this.analysisJson = analysisJson; }

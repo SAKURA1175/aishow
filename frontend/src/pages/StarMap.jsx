@@ -15,33 +15,74 @@ class ForceSimulation {
     this.width = width
     this.height = height
     this.alpha = 1
-    this.alphaDecay = 0.02
-    this.velocityDecay = 0.4
+    this.alphaDecay = 0.018
+    this.velocityDecay = 0.65 // 更平滑的阻尼，消除剧烈弹跳
   }
 
   tick() {
     if (this.alpha < 0.001) return false
     this.alpha *= 1 - this.alphaDecay
 
-    // Repulsion between all node pairs
+    // 1. 节点间距离斥力 (Charge Repulsion)
     for (let i = 0; i < this.nodes.length; i++) {
       for (let j = i + 1; j < this.nodes.length; j++) {
         const a = this.nodes[i]
         const b = this.nodes[j]
-        const dx = b.x - a.x || 0.1
-        const dy = b.y - a.y || 0.1
-        const dist2 = dx * dx + dy * dy
-        const force = (-6000 * this.alpha) / dist2
-        const fx = (dx / Math.sqrt(dist2)) * force
-        const fy = (dy / Math.sqrt(dist2)) * force
-        a.vx -= fx
-        a.vy -= fy
-        b.vx += fx
-        b.vy += fy
+        let dx = b.x - a.x
+        let dy = b.y - a.y
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1
+        // 增大排斥常数，距离近时提供足够推开力
+        const force = (-9500 * this.alpha) / (dist * dist + 100)
+        const fx = (dx / dist) * force
+        const fy = (dy / dist) * force
+        if (!a.fixed && !a.isCenter) {
+          a.vx -= fx
+          a.vy -= fy
+        }
+        if (!b.fixed && !b.isCenter) {
+          b.vx += fx
+          b.vy += fy
+        }
       }
     }
 
-    // Attraction along links
+    // 2. 硬性防重叠碰撞约束 (Hard Collision Separation)
+    // 确保任何两球表面距离至少保留 24px 空隙，绝不会遮盖互相重叠
+    const minPadding = 26
+    for (let i = 0; i < this.nodes.length; i++) {
+      for (let j = i + 1; j < this.nodes.length; j++) {
+        const a = this.nodes[i]
+        const b = this.nodes[j]
+        const minDist = (a.radius || 28) + (b.radius || 28) + minPadding
+        let dx = b.x - a.x
+        let dy = b.y - a.y
+        let dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist === 0) {
+          dx = (Math.random() - 0.5) * 2
+          dy = (Math.random() - 0.5) * 2
+          dist = Math.sqrt(dx * dx + dy * dy) || 1
+        }
+        if (dist < minDist) {
+          const overlap = minDist - dist
+          const moveX = (dx / dist) * overlap * 0.5
+          const moveY = (dy / dist) * overlap * 0.5
+          if (!a.fixed && !a.isCenter) {
+            a.x -= moveX
+            a.y -= moveY
+            a.vx -= moveX * 0.2
+            a.vy -= moveY * 0.2
+          }
+          if (!b.fixed && !b.isCenter) {
+            b.x += moveX
+            b.y += moveY
+            b.vx += moveX * 0.2
+            b.vy += moveY * 0.2
+          }
+        }
+      }
+    }
+
+    // 3. 连线弹性拉力 (Link Spring)
     for (const link of this.links) {
       const src = this.nodes.find((n) => n.id === link.source)
       const tgt = this.nodes.find((n) => n.id === link.target)
@@ -49,23 +90,41 @@ class ForceSimulation {
       const dx = tgt.x - src.x
       const dy = tgt.y - src.y
       const dist = Math.sqrt(dx * dx + dy * dy) || 1
-      const targetDist = 160
-      const force = ((dist - targetDist) / dist) * 0.08 * this.alpha
-      src.vx += dx * force
-      src.vy += dy * force
-      tgt.vx -= dx * force
-      tgt.vy -= dy * force
+      const targetDist = (src.radius || 30) + (tgt.radius || 30) + 120
+      const force = ((dist - targetDist) / dist) * 0.05 * this.alpha
+      if (!src.fixed && !src.isCenter) {
+        src.vx += dx * force
+        src.vy += dy * force
+      }
+      if (!tgt.fixed && !tgt.isCenter) {
+        tgt.vx -= dx * force
+        tgt.vy -= dy * force
+      }
     }
 
-    // Centering force
+    // 4. 中心温和回拉力 (Centering force)
     for (const n of this.nodes) {
-      n.vx += (this.width / 2 - n.x) * 0.01 * this.alpha
-      n.vy += (this.height / 2 - n.y) * 0.01 * this.alpha
+      if (n.isCenter) {
+        // 中心中心点固定在画布中央
+        n.x = this.width / 2
+        n.y = this.height / 2
+        n.vx = 0
+        n.vy = 0
+        continue
+      }
+      n.vx += (this.width / 2 - n.x) * 0.003 * this.alpha
+      n.vy += (this.height / 2 - n.y) * 0.003 * this.alpha
     }
 
-    // Apply velocity
+    // 5. 应用速度与最大速度截断 (防止瞬时碰撞爆散)
+    const maxVelocity = 12
     for (const n of this.nodes) {
-      if (n.fixed) continue
+      if (n.fixed || n.isCenter) continue
+      const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy)
+      if (speed > maxVelocity) {
+        n.vx = (n.vx / speed) * maxVelocity
+        n.vy = (n.vy / speed) * maxVelocity
+      }
       n.vx *= this.velocityDecay
       n.vy *= this.velocityDecay
       n.x += n.vx
@@ -325,10 +384,23 @@ export default function StarMap() {
 
     const { nodes, links } = buildGraphFromHierarchy(profile, user?.username)
 
-    // Scatter initial positions
+    // 采用优雅的环形放射状初始排布，避免中心点附近完全挤压重叠
+    const nonCenterNodes = nodes.filter(n => !n.isCenter)
+    const angleStep = nonCenterNodes.length > 0 ? (2 * Math.PI) / nonCenterNodes.length : 0
+    const baseRadius = Math.min(w, h) * 0.32
+
+    let idx = 0
     nodes.forEach((n) => {
-      if (n.isCenter) { n.x = w / 2; n.y = h / 2 }
-      else { n.x = w / 2 + (Math.random() - 0.5) * 300; n.y = h / 2 + (Math.random() - 0.5) * 300 }
+      if (n.isCenter) {
+        n.x = w / 2
+        n.y = h / 2
+      } else {
+        const angle = idx * angleStep + (Math.random() * 0.2 - 0.1)
+        const r = baseRadius + (idx % 2 === 0 ? 30 : -30)
+        n.x = w / 2 + Math.cos(angle) * r
+        n.y = h / 2 + Math.sin(angle) * r
+        idx++
+      }
     })
 
     nodesRef.current = nodes
@@ -337,6 +409,11 @@ export default function StarMap() {
     setSimDone(false)
 
     simRef.current = new ForceSimulation(nodes, links, w, h)
+
+    // 预热迭代 30 步，开屏时直接展现稳定平稳的布局，杜绝开屏瞬间弹跳碰撞
+    for (let step = 0; step < 30; step++) {
+      simRef.current.tick()
+    }
 
     const ctx = canvas.getContext('2d')
     drawStarfield(ctx, w, h)

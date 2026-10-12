@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Award, Plus, TrendingUp, Book, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Award, Plus, TrendingUp, Book, Users, PieChart } from 'lucide-react'
 import useStore from '@/store/useStore'
 import { getMyGrades, getGpa, createCourse, getCourses, addGrade, getMyClasses, getClassMembers } from '@/api/modules'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Grades() {
   const { user } = useStore()
+  const navigate = useNavigate()
   const isTeacher = user?.role === 'teacher' || user?.role === 'admin'
   const [grades, setGrades] = useState([])
   const [gpaData, setGpaData] = useState({ gpa: 0, totalCredits: 0, courseCount: 0 })
@@ -104,7 +106,13 @@ export default function Grades() {
           </div>
         </div>
         {isTeacher && (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/screen')}
+              className="flex items-center gap-2 px-3.5 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              <PieChart className="w-4 h-4 text-cyan-500" /> 班级学情大屏
+            </button>
             <button onClick={() => setShowAddCourse(true)} className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-sm font-medium transition-colors">
               <Book className="w-4 h-4" /> 添加课程
             </button>

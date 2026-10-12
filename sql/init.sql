@@ -148,3 +148,41 @@ CREATE TABLE IF NOT EXISTS `ai_feedback` (
     PRIMARY KEY (`id`),
     KEY `idx_message` (`message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI评价表';
+
+-- ============================================================
+-- 简历记录表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `resume` (
+    `id`               BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `user_id`          BIGINT       NOT NULL                COMMENT '所属用户 ID',
+    `filename`         VARCHAR(255) NOT NULL                COMMENT '简历文件名',
+    `file_type`        VARCHAR(16)  NOT NULL                COMMENT 'pdf/docx/txt',
+    `raw_text`         LONGTEXT                             COMMENT '原始提取文本',
+    `structured_json`  LONGTEXT                             COMMENT 'AI 结构化解析结果 (JSON)',
+    `target_role`      VARCHAR(100)                         COMMENT '目标岗位',
+    `gap_analysis`     LONGTEXT                             COMMENT '技能差距与学习流分析 (JSON)',
+    `analysis_json`    LONGTEXT                             COMMENT 'AI 综合评分分析报告 (JSON)',
+    `score`            INT          DEFAULT NULL            COMMENT '简历综合评分 0-100',
+    `create_time`      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    `update_time`      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='简历记录表';
+
+-- ============================================================
+-- 引导式学习进度表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `learning_flow_progress` (
+    `id`           BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `user_id`      BIGINT      NOT NULL                COMMENT '用户 ID',
+    `flow_type`    VARCHAR(32) NOT NULL                COMMENT '流程类型: resume_basics',
+    `current_step` INT         NOT NULL DEFAULT 0      COMMENT '当前步骤',
+    `total_steps`  INT         NOT NULL                COMMENT '总步骤数',
+    `step_data`    LONGTEXT                            COMMENT '各步骤状态和用户输入 (JSON)',
+    `status`       VARCHAR(16) NOT NULL DEFAULT 'in_progress' COMMENT 'in_progress/completed',
+    `create_time`  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    `update_time`  DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_user_flow` (`user_id`, `flow_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='引导式学习进度表';
+

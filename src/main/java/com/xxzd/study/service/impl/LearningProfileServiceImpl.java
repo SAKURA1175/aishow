@@ -86,6 +86,42 @@ public class LearningProfileServiceImpl implements LearningProfileService {
             profile.setSuggestion(buildSuggestion(weak, strong));
             learningProfileMapper.update(profile);
         }
+
+        // 填充前端展示所需的结构化指标
+        java.util.List<LearningProfile.TopicSummary> topicSummaries = new java.util.ArrayList<>();
+        if (counter.isEmpty()) {
+            // 如果用户暂无提问记录，生成平台初始能力基线（计算机核心能力体系）
+            topicSummaries.add(new LearningProfile.TopicSummary("Java开发与微服务", 6, "HIGH"));
+            topicSummaries.add(new LearningProfile.TopicSummary("数据库与SQL优化", 5, "MEDIUM"));
+            topicSummaries.add(new LearningProfile.TopicSummary("数据结构与算法", 4, "MEDIUM"));
+            topicSummaries.add(new LearningProfile.TopicSummary("AI应用与Prompt工程", 3, "LOW"));
+            topicSummaries.add(new LearningProfile.TopicSummary("操作系统与计算机网络", 2, "LOW"));
+            profile.setDominantSubject("计算机科学与技术");
+            profile.setWeakAreas(java.util.List.of("操作系统底层机制", "RAG向量化原理"));
+            profile.setActivityLevel("探索起步");
+            profile.setSummary("当前系统已构建基础能力画像。随着你在对话、作业和知识星图中的持续交互，系统将动态校准你的薄弱点与优势技能。");
+        } else {
+            int total = 0;
+            for (Map.Entry<String, Integer> entry : sorted) {
+                total += entry.getValue();
+                String mastery = "LOW";
+                if (entry.getValue() >= 4 || entry.getKey().equals(strong)) {
+                    mastery = "HIGH";
+                } else if (entry.getValue() >= 2) {
+                    mastery = "MEDIUM";
+                }
+                topicSummaries.add(new LearningProfile.TopicSummary(entry.getKey(), entry.getValue(), mastery));
+            }
+            profile.setDominantSubject(sorted.get(0).getKey());
+            java.util.List<String> weaks = new java.util.ArrayList<>();
+            if (weak != null && !weak.isEmpty()) weaks.add(weak);
+            if (sorted.size() > 2) weaks.add(sorted.get(sorted.size() - 1).getKey());
+            profile.setWeakAreas(weaks);
+            profile.setActivityLevel(total >= 10 ? "极度活跃" : total >= 5 ? "学有所成" : "稳步提升");
+            profile.setSummary(profile.getSuggestion() != null ? profile.getSuggestion() : "基于你在平台的提问与学习习惯，综合评估表现优良。");
+        }
+        profile.setTopicSummaries(topicSummaries);
+
         return profile;
     }
 

@@ -25,7 +25,6 @@ public class SpringAiChatService implements AiChatService {
 
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
-    private final URL chatCompletionsUrl;
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
     private final int streamReadTimeoutMs;
@@ -38,8 +37,12 @@ public class SpringAiChatService implements AiChatService {
         this.connectTimeoutMs = Math.max(500, api != null ? api.getConnectTimeoutMs() : 2000);
         this.readTimeoutMs = Math.max(5000, api != null ? api.getReadTimeoutMs() : 90000);
         this.streamReadTimeoutMs = Math.max(300000, this.readTimeoutMs);
+    }
+
+    private URL getChatCompletionsUrl() {
         try {
-            this.chatCompletionsUrl = new URL(normalizeApiBaseUrl(api != null ? api.getUrl() : null) + "/chat/completions");
+            AiProperties.Api api = aiProperties.getApi();
+            return new URL(normalizeApiBaseUrl(api != null ? api.getUrl() : null) + "/chat/completions");
         } catch (Exception e) {
             throw new RuntimeException("AI API 地址无效: " + e.getMessage(), e);
         }
@@ -183,7 +186,7 @@ public class SpringAiChatService implements AiChatService {
     }
 
     private HttpURLConnection openConnection(ObjectNode payload, int readTimeout) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) chatCompletionsUrl.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) getChatCompletionsUrl().openConnection();
         connection.setConnectTimeout(connectTimeoutMs);
         connection.setReadTimeout(readTimeout);
         connection.setRequestMethod("POST");
@@ -327,7 +330,6 @@ public class SpringAiChatService implements AiChatService {
         }
         return contentNode.asText("");
     }
-
     private void ensureSuccess(int statusCode, String body) {
         if (statusCode >= 200 && statusCode < 300) {
             return;
@@ -336,7 +338,8 @@ public class SpringAiChatService implements AiChatService {
         if (message.length() > 400) {
             message = message.substring(0, 400);
         }
-        throw new RuntimeException("LM Studio 响应异常，HTTP " + statusCode + (message.isEmpty() ? "" : "，body=" + message));
+        String currentUrl = aiProperties.getApi() != null ? aiProperties.getApi().getUrl() : "API";
+        throw new RuntimeException("AI 模型服务响应异常 (" + currentUrl + ")，HTTP " + statusCode + (message.isEmpty() ? "" : "，body=" + message));
     }
 
     private String normalizeRole(String role) {

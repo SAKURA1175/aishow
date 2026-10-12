@@ -496,3 +496,121 @@ INSERT INTO learning_profile(user_id,weak_topics,strong_topics,suggestion) VALUE
 (3,'数据库','Java','你在数据库相关问题上提问较多，建议重点复习事务隔离、索引失效和范式设计；Java 项目分层掌握较好，可以继续做综合项目。'),
 (2,'AI应用','Java','教师端最近围绕 AI 应用与数据库训练营备课较多，可把 RAG 课堂练习和索引实验沉淀为可复用教案。')
 ON DUPLICATE KEY UPDATE weak_topics=VALUES(weak_topics), strong_topics=VALUES(strong_topics), suggestion=VALUES(suggestion);
+
+-- ============================================================
+-- 学科学情大屏全量真实业务模拟数据
+-- ============================================================
+UPDATE course SET class_id = 1 WHERE id = 7;
+INSERT IGNORE INTO course (id, name, credit, semester, teacher_id, class_id)
+VALUES (17, '机器学习核心原理', 3.5, '2025秋', 6, 6);
+
+INSERT IGNORE INTO class_member (class_id, user_id, role) VALUES
+(9, 3, 'student'), (9, 4, 'student'), (9, 5, 'student'), (9, 7, 'student'), (9, 8, 'student'), (9, 9, 'student'), (9, 10, 'student'),
+(10, 3, 'student'), (10, 4, 'student'), (10, 5, 'student'), (10, 7, 'student'), (10, 8, 'student'), (10, 9, 'student'), (10, 10, 'student'),
+(11, 3, 'student'), (11, 4, 'student'), (11, 5, 'student'), (11, 7, 'student'), (11, 8, 'student'), (11, 9, 'student'), (11, 10, 'student'),
+(12, 3, 'student'), (12, 4, 'student'), (12, 5, 'student'), (12, 7, 'student'), (12, 8, 'student'), (12, 9, 'student'), (12, 10, 'student'),
+(1, 3, 'student'), (1, 4, 'student'), (1, 5, 'student'), (1, 7, 'student'), (1, 8, 'student'), (1, 9, 'student'), (1, 10, 'student'),
+(2, 3, 'student'), (2, 4, 'student'), (2, 5, 'student'), (2, 7, 'student'), (2, 8, 'student'), (2, 9, 'student'), (2, 10, 'student');
+
+INSERT INTO grade (user_id, course_id, score, grade_point, grade_type, semester, remark) VALUES
+(4, 9, 82.0, 3.3, 'final', '2025春', '正常完成'),
+(5, 9, 96.0, 4.0, 'final', '2025春', '项目表现优异'),
+(7, 9, 58.0, 0.0, 'final', '2025春', '需补考重点章节'),
+(8, 9, 86.5, 3.7, 'final', '2025春', '代码规范良好'),
+(9, 9, 91.0, 4.0, 'final', '2025春', '架构设计突出'),
+(10, 9, 73.5, 2.3, 'final', '2025春', '完成基础模块'),
+(4, 10, 79.0, 3.0, 'final', '2025春', '接口联调顺利'),
+(5, 10, 93.5, 4.0, 'final', '2025春', '全链路测试完整'),
+(7, 10, 62.0, 1.0, 'final', '2025春', '基础及格'),
+(8, 10, 84.0, 3.3, 'final', '2025春', '常规完成'),
+(9, 10, 90.0, 4.0, 'final', '2025春', '优秀'),
+(10, 10, 71.0, 2.3, 'final', '2025春', '达标'),
+(4, 11, 85.0, 3.7, 'final', '2025春', '实验完整'),
+(5, 11, 95.0, 4.0, 'final', '2025春', 'Prompt设计出色'),
+(7, 11, 57.0, 0.0, 'final', '2025春', '模型理解待提升'),
+(8, 11, 88.0, 3.7, 'final', '2025春', '完成向量化实验'),
+(9, 11, 92.0, 4.0, 'final', '2025春', '创新度高'),
+(10, 11, 74.0, 2.7, 'final', '2025春', '达标'),
+(4, 12, 80.0, 3.0, 'final', '2025春', '切分实验完成'),
+(5, 12, 94.0, 4.0, 'final', '2025春', '召回率测试优秀'),
+(7, 12, 63.0, 1.5, 'final', '2025春', '及格'),
+(8, 12, 86.0, 3.7, 'final', '2025春', '良好'),
+(9, 12, 89.5, 3.7, 'final', '2025春', '良好'),
+(10, 12, 70.0, 2.0, 'final', '2025春', '达标'),
+(3, 13, 91.0, 4.0, 'final', '2025春', 'ER图完整'),
+(4, 13, 83.0, 3.3, 'final', '2025春', '规范化设计良好'),
+(5, 13, 97.0, 4.0, 'final', '2025春', '范式设计规范'),
+(7, 13, 59.0, 0.0, 'final', '2025春', '第三范式待强化'),
+(8, 13, 85.0, 3.7, 'final', '2025春', '良好'),
+(9, 13, 92.5, 4.0, 'final', '2025春', '优秀'),
+(10, 13, 75.0, 2.7, 'final', '2025春', '中等'),
+(3, 14, 88.0, 3.7, 'final', '2025春', '执行计划分析正确'),
+(4, 14, 81.0, 3.0, 'final', '2025春', '索引优化有效'),
+(5, 14, 94.0, 4.0, 'final', '2025春', '慢SQL排查极快'),
+(7, 14, 61.0, 1.0, 'final', '2025春', '勉强及格'),
+(8, 14, 82.0, 3.0, 'final', '2025春', '良好'),
+(9, 14, 89.0, 3.7, 'final', '2025春', '良好'),
+(10, 14, 72.0, 2.3, 'final', '2025春', '达标'),
+(3, 15, 93.0, 4.0, 'final', '2025秋', '路演表现优异'),
+(4, 15, 84.0, 3.3, 'final', '2025秋', '功能完备'),
+(5, 15, 96.0, 4.0, 'final', '2025秋', '完整度高'),
+(7, 15, 60.0, 1.0, 'final', '2025秋', '刚刚及格'),
+(8, 15, 87.0, 3.7, 'final', '2025秋', '稳定'),
+(9, 15, 91.0, 4.0, 'final', '2025秋', '优'),
+(10, 15, 73.0, 2.3, 'final', '2025秋', '达标'),
+(3, 16, 90.0, 4.0, 'final', '2025秋', '复盘深刻'),
+(4, 16, 82.0, 3.0, 'final', '2025秋', '良好'),
+(5, 16, 95.0, 4.0, 'final', '2025秋', '卓越'),
+(7, 16, 65.0, 1.5, 'final', '2025秋', '及格'),
+(8, 16, 85.0, 3.7, 'final', '2025秋', '良好'),
+(9, 16, 92.0, 4.0, 'final', '2025秋', '优秀'),
+(10, 16, 76.0, 2.7, 'final', '2025秋', '合格');
+
+INSERT IGNORE INTO assignment_submission (assignment_id, student_id, content, teacher_score, ai_score, status, submit_time) VALUES
+(9, 3, '已完成Java阶段报告与架构图', 95, 92, 'graded', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(9, 4, '已提交核心模块代码说明', 84, 82, 'graded', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(9, 5, '提交完整工程代码及单元测试报告', 98, 96, 'graded', DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(9, 7, '基础模块部分完成，后续补交', 58, 60, 'graded', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(9, 8, '提交阶段成果报告', 88, 85, 'graded', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(9, 9, '提交微服务分层设计说明', 92, 90, 'graded', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(9, 10, '提交报告，等待批改', 72, 75, 'graded', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(10, 3, '接口联调文档与Swagger接入说明', 92, 90, 'graded', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(10, 4, 'Controller与Service联调记录', 82, 80, 'graded', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(10, 5, '全局异常与统一响应封装完成', 96, 95, 'graded', DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(10, 7, '迟交补交Spring Boot接口测试', 62, 65, 'graded', NOW()),
+(10, 8, '单元测试与MockMvc测试', 85, 83, 'graded', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(10, 9, '高并发测试压测报告', 90, 88, 'graded', DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(10, 10, '基础增删改查联调', 74, 70, 'graded', DATE_SUB(NOW(), INTERVAL 1 DAY));
+
+INSERT IGNORE INTO exam_submission (exam_id, student_id, answers, score, ai_feedback, status, submit_time) VALUES
+(9, 3, '{"q1":"A","q2":"B","q3":"C"}', 94, '答题完整，Java多线程理解深入', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 4, '{"q1":"A","q2":"A","q3":"C"}', 82, '面向对象概念清晰', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 5, '{"q1":"A","q2":"B","q3":"D"}', 98, '满分水准，代码实践规范', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 7, '{"q1":"B","q2":"C","q3":"A"}', 56, '集合框架与泛型掌握欠缺', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 8, '{"q1":"A","q2":"B","q3":"C"}', 86, '良好，个别选择题失分', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 9, '{"q1":"A","q2":"B","q3":"D"}', 90, '优秀，逻辑严密', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(9, 10, '{"q1":"C","q2":"B","q3":"C"}', 72, '及格，JVM知识点薄弱', 'submitted', DATE_SUB(NOW(), INTERVAL 5 DAY));
+
+INSERT IGNORE INTO checkin (user_id, checkin_date, study_minutes, content) VALUES
+(3, CURDATE(), 90, '深入复习Spring Boot核心原理'),
+(3, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 120, '算法刷题与动态规划'),
+(3, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 80, '数据库索引调优实战'),
+(3, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 100, '项目联调与重构'),
+(5, CURDATE(), 110, '完成全栈微服务架构实战'),
+(5, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 95, '复习Java并发容器源码'),
+(5, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 105, '分布式事务实验'),
+(9, CURDATE(), 85, 'Web组件开发与性能优化'),
+(9, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 90, 'CSS Grid与Flexbox高级实战'),
+(8, CURDATE(), 60, '完成课后作业第三章'),
+(4, CURDATE(), 75, '复习SQL查询语法与JOIN优化'),
+(10, CURDATE(), 50, '阅读教程第二章'),
+(7, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 40, '完成错题整理');
+
+INSERT IGNORE INTO wrong_question (user_id, subject, content, correct_answer, my_answer, knowledge_point, mastery) VALUES
+(7, 'Java核心技术', '下列关于Java线程池ThreadPoolExecutor核心参数描述正确的是？', 'B', 'C', '语言核心与并发机制', 'unmastered'),
+(7, '算法与数据结构', '快速排序在最坏情况下的时间复杂度是多少？', 'O(n^2)', 'O(nlogn)', '算法分析与复杂度', 'unmastered'),
+(7, '数据库系统', 'MySQL默认的事务隔离级别是什么？', '可重复读 (Repeatable Read)', '读已提交', '数据建模与事务隔离', 'unmastered'),
+(4, '数据库系统', '聚集索引和非聚集索引的主要区别是？', '叶子节点是否包含完整行数据', '是否唯一', '数据建模与持久化', 'unmastered'),
+(10, 'Java核心技术', 'HashMap在JDK 8中链表转红黑树的阈值是多少？', '8且数组长度>=64', '8', '语言核心与集合机制', 'mastered'),
+(8, 'Web前端全栈', 'React useEffect清理函数执行的时机？', '组件卸载或下次effect执行前', '组件重新渲染后', '架构设计与组件生命周期', 'mastered'),
+(3, '架构设计', '微服务中熔断降级的主要作用是？', '防止雪崩效应', '加速响应', '系统架构与稳定性', 'mastered');

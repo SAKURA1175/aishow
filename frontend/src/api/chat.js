@@ -24,7 +24,8 @@ export const clearSessions = () =>
  */
 export const streamAsk = (question, sessionId, deepThink = false, webSearch = false) => {
   const params = new URLSearchParams({ question })
-  if (sessionId) params.append('sessionId', sessionId)
+  const validSid = typeof sessionId === 'number' ? sessionId : (typeof sessionId === 'string' && /^\d+$/.test(sessionId.trim()) ? Number(sessionId.trim()) : null)
+  if (validSid) params.append('sessionId', validSid)
   if (deepThink) params.append('deepThink', 'true')
   if (webSearch) params.append('webSearch', 'true')
   return new EventSource(`/api/chat/stream?${params.toString()}`, {

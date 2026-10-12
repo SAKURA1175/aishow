@@ -18,5 +18,12 @@ public interface ResumeMapper {
                        @Param("analysisJson") String analysisJson,
                        @Param("score") Integer score);
 
+    int updateGapAnalysis(@Param("id") Long id,
+                          @Param("targetRole") String targetRole,
+                          @Param("gapAnalysis") String gapAnalysis);
+
+    int updateCanvaData(@Param("id") Long id,
+                        @Param("canvaData") String canvaData);
+
     int deleteById(@Param("id") Long id);
 }

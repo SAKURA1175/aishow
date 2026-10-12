@@ -59,16 +59,63 @@ public class ResumeParseService {
     }
 
     private String extractDocx(InputStream inputStream) throws Exception {
-        try (XWPFDocument doc = new XWPFDocument(inputStream)) {
-            List<XWPFParagraph> paragraphs = doc.getParagraphs();
-            StringBuilder sb = new StringBuilder();
-            for (XWPFParagraph para : paragraphs) {
+        byte[] bytes = inputStream.readAllBytes();
+        StringBuilder sb = new StringBuilder();
+
+        // 1. 优先尝试标准 Apache POI XWPF 提取段落与表格
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
+             XWPFDocument doc = new XWPFDocument(bais)) {
+            for (XWPFParagraph para : doc.getParagraphs()) {
                 String text = para.getText();
                 if (text != null && !text.isBlank()) {
-                    sb.append(text).append("\n");
+                    sb.append(text.trim()).append("\n");
                 }
             }
-            return sb.toString().trim();
+            // 提取所有表格内容
+            for (org.apache.poi.xwpf.usermodel.XWPFTable table : doc.getTables()) {
+                for (org.apache.poi.xwpf.usermodel.XWPFTableRow row : table.getRows()) {
+                    for (org.apache.poi.xwpf.usermodel.XWPFTableCell cell : row.getTableCells()) {
+                        String cellText = cell.getText();
+                        if (cellText != null && !cellText.isBlank()) {
+                            sb.append(cellText.trim()).append("\n");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // POI 读取若有警告继续降级到 XML 扫描
         }
+
+        // 2. 若通过段落与表格提取的字数较少（例如大量文字放在 WPS 文本框、绘图画布或图形中），从 word/document.xml 直接提取所有 <w:t>
+        if (sb.toString().trim().length() < 50) {
+            try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
+                 java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(bais)) {
+                java.util.zip.ZipEntry entry;
+                StringBuilder xmlSb = new StringBuilder();
+                while ((entry = zis.getNextEntry()) != null) {
+                    if ("word/document.xml".equalsIgnoreCase(entry.getName()) ||
+                        (entry.getName().startsWith("word/header") && entry.getName().endsWith(".xml")) ||
+                        (entry.getName().startsWith("word/footer") && entry.getName().endsWith(".xml"))) {
+                        byte[] xmlBytes = zis.readAllBytes();
+                        String xmlStr = new String(xmlBytes, java.nio.charset.StandardCharsets.UTF_8);
+                        // 匹配所有 <w:t ...>文本</w:t> 或 <w:t>文本</w:t>
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<w:t(?:\\s+[^>]*)?>([^<]+)</w:t>");
+                        java.util.regex.Matcher matcher = pattern.matcher(xmlStr);
+                        while (matcher.find()) {
+                            String t = matcher.group(1).trim();
+                            // 排除单纯的数字坐标（如 1419225 等 WPS 排版参数）
+                            if (!t.isEmpty() && !t.matches("^-?\\d{5,}$")) {
+                                xmlSb.append(t).append("\n");
+                            }
+                        }
+                    }
+                }
+                if (xmlSb.toString().trim().length() > sb.toString().trim().length()) {
+                    return xmlSb.toString().trim();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return sb.toString().trim();
     }
 }

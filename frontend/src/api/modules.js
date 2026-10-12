@@ -18,6 +18,7 @@ export const submitAssignment = (id, data) => axios.post(`/api/assignment/${id}/
 export const getSubmissions = (id) => axios.get(`/api/assignment/${id}/submissions`)
 export const getMySubmission = (id) => axios.get(`/api/assignment/${id}/my-submission`)
 export const gradeSubmission = (subId, data) => axios.post(`/api/assignment/submissions/${subId}/grade`, data)
+export const aiGradeSubmission = (subId) => axios.post(`/api/assignment/submissions/${subId}/ai-grade`)
 
 // ===== 成绩管理 =====
 export const createCourse = (data) => axios.post('/api/grade/course', data)
@@ -46,6 +47,7 @@ export const updateWrongQuestion = (id, data) => axios.put(`/api/wrong-question/
 export const deleteWrongQuestion = (id) => axios.delete(`/api/wrong-question/${id}`)
 export const getMyWrongQuestions = (subject) => axios.get('/api/wrong-question/my', { params: { subject } })
 export const setQuestionMastery = (id, mastery) => axios.post(`/api/wrong-question/${id}/mastery?mastery=${mastery}`)
+export const aiAnalyzeWrongQuestion = (id) => axios.post(`/api/wrong-question/${id}/ai-analysis`)
 
 // ===== 课程笔记 =====
 export const createNotebook = (data) => axios.post('/api/notebook', data)
@@ -54,6 +56,7 @@ export const deleteNotebook = (id) => axios.delete(`/api/notebook/${id}`)
 export const getNotebookDetail = (id) => axios.get(`/api/notebook/${id}`)
 export const getMyNotebooks = () => axios.get('/api/notebook/my')
 export const getSharedNotebooks = () => axios.get('/api/notebook/shared')
+export const aiSummarizeNotebook = (id) => axios.post(`/api/notebook/${id}/ai-summary`)
 
 // ===== 讨论区 =====
 export const createPost = (data) => axios.post('/api/post', data)

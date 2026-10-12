@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Shield, BrainCircuit, UploadCloud, CheckCircle2, XCircle, Loader2, ChevronDown, RefreshCw, Zap, Database, Server, MessageSquare, FileText, Terminal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Shield, BrainCircuit, UploadCloud, CheckCircle2, XCircle, Loader2, ChevronDown, RefreshCw, Zap, Database, Server, MessageSquare, FileText, Terminal, PieChart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -42,7 +43,12 @@ function ModelPanel() {
   }, [])
 
   const applyPreset = (p) => {
-    setConfig(prev => ({ ...prev, apiUrl: p.apiUrl, model: p.id.includes('local') ? prev.model : p.id.split('-').slice(-1)[0] }))
+    setConfig(prev => ({
+      ...prev,
+      apiUrl: p.apiUrl,
+      model: p.model || p.id,
+      apiKey: (p.category && p.category.includes('本地')) ? (p.apiKeyHint || 'lm-studio') : prev.apiKey
+    }))
     setPresetsOpen(false)
   }
 
@@ -572,19 +578,27 @@ function PromptPanel() {
 // ─── 主页面 ────────────────────────────────────────────────────────────────────
 export default function Admin() {
   const [tab, setTab] = useState('model')
-
+  const navigate = useNavigate()
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
-      <div className="flex items-center gap-4 px-8 py-5 border-b flex-shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-primary" />
+      <div className="flex items-center justify-between px-8 py-5 border-b flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight">管理控制台</h2>
+            <p className="text-xs text-muted-foreground">模型管理 · 知识库导入 · 学情分析</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-bold tracking-tight">管理控制台</h2>
-          <p className="text-xs text-muted-foreground">模型管理 · 知识库导入</p>
-        </div>
+        <button
+          onClick={() => navigate('/screen')}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 rounded-xl text-sm font-semibold transition-all shadow-sm"
+        >
+          <PieChart className="w-4 h-4 text-cyan-500" /> 进入班级学情大屏 →
+        </button>
       </div>
 
       {/* Tabs */}

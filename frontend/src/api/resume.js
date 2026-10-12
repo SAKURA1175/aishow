@@ -27,11 +27,42 @@ export const deleteResume = (id) => http.delete(`/resume/${id}`)
  * @returns {EventSource} 可调用 .close() 中断
  */
 export const analyzeResume = (id, onToken, onDone, onError) => {
-  const es = new EventSource(`/api/resume/${id}/analyze`)
+  const es = new EventSource(`/api/resume/${id}/analyze`, { withCredentials: true })
   es.addEventListener('data', (e) => onToken && onToken(e.data))
   es.addEventListener('done', () => { onDone && onDone(); es.close() })
   es.addEventListener('error', (e) => {
     onError && onError(e.data || '分析失败')
+    es.close()
+  })
+  return es
+}
+
+// ── 岗位技能 Gap 分析 & STAR 润色 ───────────────────────────────────────────
+
+export const matchJob = (id, targetRole, customJd = '') =>
+  http.post(`/resume/${id}/match-job`, { targetRole, customJd })
+
+export const triggerExtract = (id) =>
+  http.post(`/resume/${id}/extract`)
+
+export const generateCanvaResume = async (id, stylePreference = '') => {
+  return http.post(`/resume/${id}/generate-canva`, {
+    stylePreference
+  }, { timeout: 60000 });
+};
+
+export const saveCanvaResume = async (id, canvaData) => {
+  const dataStr = typeof canvaData === 'string' ? canvaData : JSON.stringify(canvaData);
+  return http.post(`/resume/${id}/canva-save`, { canvaData: dataStr });
+};
+
+export const polishResume = (id, targetRole, onToken, onDone, onError) => {
+  const params = targetRole ? `?targetRole=${encodeURIComponent(targetRole)}` : ''
+  const es = new EventSource(`/api/resume/${id}/polish${params}`, { withCredentials: true })
+  es.addEventListener('data', (e) => onToken && onToken(e.data))
+  es.addEventListener('done', () => { onDone && onDone(); es.close() })
+  es.addEventListener('error', (e) => {
+    onError && onError(e.data || '润色失败')
     es.close()
   })
   return es
@@ -69,13 +100,12 @@ export const askResume = async (id, question, onToken, onDone, onError) => {
         const lines = buffer.split('\n')
         buffer = lines.pop()
         for (const line of lines) {
-          const trimmed = line.trim()
-          if (trimmed.startsWith('data:')) {
-            const data = trimmed.slice(5).trim()
-            if (data === '[DONE]') { onDone && onDone(); return }
+          if (line.startsWith('data:')) {
+            const data = line.slice(5)
+            if (data.trim() === '[DONE]') { onDone && onDone(); return }
             onToken && onToken(data)
-          } else if (trimmed.startsWith('event:error')) {
-            // next line will have data
+          } else if (line.startsWith('event:error')) {
+            // error line follows
           }
         }
       }
@@ -126,10 +156,9 @@ export const submitFlowStep = async (flowType, stepId, answer, onToken, onDone, 
         const lines = buffer.split('\n')
         buffer = lines.pop()
         for (const line of lines) {
-          const trimmed = line.trim()
-          if (trimmed.startsWith('data:')) {
-            const data = trimmed.slice(5).trim()
-            if (data === '[DONE]') { onDone && onDone(); return }
+          if (line.startsWith('data:')) {
+            const data = line.slice(5)
+            if (data.trim() === '[DONE]') { onDone && onDone(); return }
             onToken && onToken(data)
           }
         }
@@ -149,7 +178,7 @@ export const submitFlowStep = async (flowType, stepId, answer, onToken, onDone, 
  * SSE 流式生成最终总结报告
  */
 export const getFlowSummary = (flowType, onToken, onDone, onError) => {
-  const es = new EventSource(`/api/flow/${flowType}/summary`)
+  const es = new EventSource(`/api/flow/${flowType}/summary`, { withCredentials: true })
   es.addEventListener('data', (e) => onToken && onToken(e.data))
   es.addEventListener('done', () => { onDone && onDone(); es.close() })
   es.addEventListener('error', (e) => { onError && onError(e.data || '生成失败'); es.close() })

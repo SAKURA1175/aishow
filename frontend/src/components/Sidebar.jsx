@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, School, Book, Award, Calendar, FileText,
   User, Network, Clock, Settings, LogOut, Moon, Sun, Sparkles, BookOpen, MessageSquare,
-  Target, FileEdit, MessagesSquare, Flame, ClipboardList
+  Target, FileEdit, MessagesSquare, Flame, ClipboardList, PieChart
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import useStore from '@/store/useStore'
@@ -103,7 +103,24 @@ export default function Sidebar() {
         
         {isAdmin && (
           <div className="space-y-1">
-            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">管理</h3>
+            <h3 className="px-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">管理与分析</h3>
+            <NavLink
+              to="/screen"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 group relative',
+                  isActive
+                    ? 'bg-cyan-500/10 text-cyan-500 font-semibold shadow-sm border border-cyan-500/20'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                )
+              }
+            >
+              <div className="p-1 rounded-md text-cyan-500 group-hover:scale-110 transition-transform">
+                <PieChart className="w-[18px] h-[18px]" />
+              </div>
+              <span className="flex-1">学情大屏</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/30 font-bold">LIVE</span>
+            </NavLink>
             <NavLink
               to="/admin"
               className={({ isActive }) =>

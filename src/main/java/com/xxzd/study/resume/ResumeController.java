@@ -192,6 +192,117 @@ public class ResumeController {
         return emitter;
     }
 
+    // ── 目标岗位技能 Gap 分析 ────────────────────────────────────────────────
+    @PostMapping("/{id}/match-job")
+    public ApiResponse<String> matchJob(@PathVariable Long id,
+                                         @RequestBody java.util.Map<String, String> body,
+                                         HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) return ApiResponse.fail("请先登录");
+        Resume resume = resumeMapper.selectById(id);
+        if (resume == null || !resume.getUserId().equals(user.getId()))
+            return ApiResponse.fail("简历不存在或无权访问");
+
+        String targetRole = body.getOrDefault("targetRole", "Java 后端开发工程师");
+        String customJd = body.getOrDefault("customJd", "");
+
+        String gapResult = analyzeService.analyzeJobGap(resume.getRawText(), targetRole, customJd);
+        resumeMapper.updateGapAnalysis(id, targetRole, gapResult);
+        return ApiResponse.ok(gapResult);
+    }
+
+    // ── STAR 法则流式精修润色 ─────────────────────────────────────────────────
+    @GetMapping(value = "/{id}/polish", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter polish(@PathVariable Long id,
+                             @RequestParam(required = false) String targetRole,
+                             HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        SseEmitter emitter = new SseEmitter(180_000L);
+
+        SSE_EXECUTOR.submit(() -> {
+            if (user == null) {
+                safeComplete(emitter, "[ERROR]请先登录");
+                return;
+            }
+            Resume resume = resumeMapper.selectById(id);
+            if (resume == null || !resume.getUserId().equals(user.getId())) {
+                safeComplete(emitter, "[ERROR]简历不存在或无权访问");
+                return;
+            }
+
+            String role = (targetRole != null && !targetRole.isBlank()) ? targetRole : resume.getTargetRole();
+            analyzeService.streamPolish(resume.getRawText(), role)
+                    .doOnNext(token -> {
+                        try { emitter.send(SseEmitter.event().name("data").data(token)); }
+                        catch (Exception ignored) {}
+                    })
+                    .doOnComplete(() -> {
+                        try { emitter.send(SseEmitter.event().name("done").data("[DONE]")); }
+                        catch (Exception ignored) {}
+                        emitter.complete();
+                    })
+                    .doOnError(e -> safeComplete(emitter, "[ERROR]" + e.getMessage()))
+                    .subscribe();
+        });
+
+        return emitter;
+    }
+
+    // ── 确保结构化抽取完成 ─────────────────────────────────────────────────────
+    @PostMapping("/{id}/extract")
+    public ApiResponse<String> extract(@PathVariable Long id, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) return ApiResponse.fail("请先登录");
+        Resume resume = resumeMapper.selectById(id);
+        if (resume == null || !resume.getUserId().equals(user.getId()))
+            return ApiResponse.fail("简历不存在或无权访问");
+
+        if (resume.getStructuredJson() != null && !resume.getStructuredJson().isBlank() && !resume.getStructuredJson().equals("{}")) {
+            return ApiResponse.ok(resume.getStructuredJson());
+        }
+        String structured = analyzeService.structuredExtract(resume.getRawText());
+        resumeMapper.updateAnalysis(id, structured, resume.getAnalysisJson(), resume.getScore());
+        return ApiResponse.ok(structured);
+    }
+
+    // ── 大模型调用 Canva MCP 制作高保真简历 ──────────────────────────────────────
+    @PostMapping("/{id}/generate-canva")
+    public ApiResponse<String> generateCanva(@PathVariable Long id,
+                                             @RequestBody(required = false) java.util.Map<String, String> body,
+                                             HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) return ApiResponse.fail("请先登录");
+        Resume resume = resumeMapper.selectById(id);
+        if (resume == null || !resume.getUserId().equals(user.getId()))
+            return ApiResponse.fail("简历不存在或无权访问");
+
+        String stylePreference = body != null ? body.get("stylePreference") : null;
+        try {
+            String canvaData = analyzeService.generateCanvaResume(id, stylePreference);
+            return ApiResponse.ok(canvaData);
+        } catch (Exception e) {
+            return ApiResponse.fail("Canva 制作失败：" + e.getMessage());
+        }
+    }
+
+    // ── 保存用户当前选中的 Canva 模板与版式数据（后台保活） ───────────────────────
+    @PostMapping("/{id}/canva-save")
+    public ApiResponse<Void> saveCanva(@PathVariable Long id,
+                                       @RequestBody java.util.Map<String, String> body,
+                                       HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) return ApiResponse.fail("请先登录");
+        Resume resume = resumeMapper.selectById(id);
+        if (resume == null || !resume.getUserId().equals(user.getId()))
+            return ApiResponse.fail("简历不存在或无权访问");
+
+        String canvaData = body != null ? body.get("canvaData") : null;
+        if (canvaData != null && !canvaData.isBlank()) {
+            resumeMapper.updateCanvaData(id, canvaData);
+        }
+        return ApiResponse.ok(null);
+    }
+
     // ── 删除 ──────────────────────────────────────────────────────────────────
 
     @DeleteMapping("/{id}")

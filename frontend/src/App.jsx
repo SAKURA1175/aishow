@@ -20,6 +20,8 @@ import Forum from '@/pages/Forum'
 import CheckinPage from '@/pages/CheckinPage'
 import Exams from '@/pages/Exams'
 
+import ScreenDashboard from '@/pages/ScreenDashboard'
+
 export default function App() {
   const basename = window.location.pathname.startsWith('/app') ? '/app' : undefined
 
@@ -27,6 +29,14 @@ export default function App() {
     <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/screen-view"
+          element={
+            <ProtectedRoute roles={['teacher', 'admin']}>
+              <ScreenDashboard />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/"
           element={
@@ -52,6 +62,14 @@ export default function App() {
           <Route path="forum" element={<Forum />} />
           <Route path="checkin" element={<CheckinPage />} />
           <Route path="exams" element={<Exams />} />
+          <Route
+            path="screen"
+            element={
+              <ProtectedRoute roles={['teacher', 'admin']}>
+                <ScreenDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="admin"
             element={

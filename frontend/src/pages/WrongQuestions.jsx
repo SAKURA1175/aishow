@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Target, Plus, Trash2, CheckCircle, AlertCircle, RotateCcw } from 'lucide-react'
-import { getMyWrongQuestions, addWrongQuestion, deleteWrongQuestion, setQuestionMastery } from '@/api/modules'
+import { Target, Plus, Trash2, CheckCircle, AlertCircle, RotateCcw, Sparkles, Loader2 } from 'lucide-react'
+import { getMyWrongQuestions, addWrongQuestion, deleteWrongQuestion, setQuestionMastery, aiAnalyzeWrongQuestion } from '@/api/modules'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function WrongQuestions() {
@@ -9,6 +9,7 @@ export default function WrongQuestions() {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ subject: '', content: '', correctAnswer: '', myAnswer: '', knowledgePoint: '' })
   const [filter, setFilter] = useState('')
+  const [analyzingId, setAnalyzingId] = useState(null)
 
   useEffect(() => { load() }, [filter])
 
@@ -29,6 +30,21 @@ export default function WrongQuestions() {
 
   const handleMastery = async (id, m) => {
     try { await setQuestionMastery(id, m); load() } catch {}
+  }
+
+  const handleAiAnalyze = async (q) => {
+    try {
+      setAnalyzingId(q.id)
+      const res = await aiAnalyzeWrongQuestion(q.id)
+      const analysis = res.data?.data?.aiAnalysis
+      if (analysis) {
+        setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, aiAnalysis: analysis } : item))
+      }
+    } catch (err) {
+      alert('AI 分析错因失败: ' + (err.response?.data?.message || err.message))
+    } finally {
+      setAnalyzingId(null)
+    }
   }
 
   const subjects = [...new Set(questions.map(q => q.subject).filter(Boolean))]
@@ -66,16 +82,36 @@ export default function WrongQuestions() {
                    {q.knowledgePoint && <span className="text-xs bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded">{q.knowledgePoint}</span>}
                    <span className={`text-xs px-2 py-0.5 rounded ${masteryColors[q.mastery]}`}>{masteryLabels[q.mastery]}</span>
                  </div>
-                 <div className="flex items-center gap-1">
-                   {q.mastery !== 'mastered' && <button onClick={() => handleMastery(q.id, 'mastered')} className="p-1.5 hover:bg-green-500/10 rounded text-muted-foreground hover:text-green-500"><CheckCircle className="w-4 h-4" /></button>}
-                   {q.mastery !== 'reviewing' && q.mastery !== 'mastered' && <button onClick={() => handleMastery(q.id, 'reviewing')} className="p-1.5 hover:bg-yellow-500/10 rounded text-muted-foreground hover:text-yellow-500"><RotateCcw className="w-4 h-4" /></button>}
-                   <button onClick={() => handleDelete(q.id)} className="p-1.5 hover:bg-red-500/10 rounded text-muted-foreground hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                 <div className="flex items-center gap-1.5">
+                   <button
+                     type="button"
+                     disabled={analyzingId === q.id}
+                     onClick={() => handleAiAnalyze(q)}
+                     className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                     title="调用 AI 深度诊断错误原因及巩固考点"
+                   >
+                     {analyzingId === q.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                     {analyzingId === q.id ? '诊断中...' : (q.aiAnalysis ? '重新诊断' : 'AI 错因诊断')}
+                   </button>
+                   {q.mastery !== 'mastered' && <button onClick={() => handleMastery(q.id, 'mastered')} title="标记为已掌握" className="p-1.5 hover:bg-green-500/10 rounded text-muted-foreground hover:text-green-500"><CheckCircle className="w-4 h-4" /></button>}
+                   {q.mastery !== 'reviewing' && q.mastery !== 'mastered' && <button onClick={() => handleMastery(q.id, 'reviewing')} title="标记为复习中" className="p-1.5 hover:bg-yellow-500/10 rounded text-muted-foreground hover:text-yellow-500"><RotateCcw className="w-4 h-4" /></button>}
+                   <button onClick={() => handleDelete(q.id)} title="删除错题" className="p-1.5 hover:bg-red-500/10 rounded text-muted-foreground hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                  </div>
                </div>
                <p className="text-sm font-medium mb-2">{q.content}</p>
-               {q.myAnswer && <p className="text-xs text-red-400 mb-1">❌ 我的答案：{q.myAnswer}</p>}
-               {q.correctAnswer && <p className="text-xs text-green-500 mb-1">✅ 正确答案：{q.correctAnswer}</p>}
-               {q.aiAnalysis && <div className="mt-3 p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground"><strong>AI分析：</strong>{q.aiAnalysis}</div>}
+               <div className="flex flex-wrap gap-x-4 gap-y-1 mb-2">
+                 {q.myAnswer && <p className="text-xs text-red-500/90 bg-red-500/5 px-2 py-1 rounded border border-red-500/10">❌ 我的答案：{q.myAnswer}</p>}
+                 {q.correctAnswer && <p className="text-xs text-green-600 bg-green-500/5 px-2 py-1 rounded border border-green-500/10">✅ 正确答案：{q.correctAnswer}</p>}
+               </div>
+               {q.aiAnalysis && (
+                 <div className="mt-3 p-3.5 bg-red-500/5 border border-red-500/20 rounded-xl text-xs space-y-1 text-card-foreground">
+                   <div className="flex items-center gap-1.5 font-semibold text-red-600">
+                     <Sparkles className="w-3.5 h-3.5" />
+                     <span>名师 AI 错因深度诊断与建议：</span>
+                   </div>
+                   <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground pt-1">{q.aiAnalysis}</p>
+                 </div>
+               )}
              </div>
            ))}
          </div>

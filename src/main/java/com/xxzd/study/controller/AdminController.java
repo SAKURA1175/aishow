@@ -96,18 +96,53 @@ public class AdminController {
             return ApiResponse.fail("API Key 不能为空");
         }
 
-        // 写入 Redis（redis.properties 的字段名，供下次重启使用）
-        stringRedisTemplate.opsForValue().set("ai.model", config.getModel());
-        stringRedisTemplate.opsForValue().set("ai.api.url", config.getApiUrl());
-        stringRedisTemplate.opsForValue().set("ai.api.key", config.getApiKey());
+        // 获取有效 Key（如果传来的是脱敏或占位符，保留原有 Key）
+        String effectiveKey = config.getApiKey();
+        if (effectiveKey == null || effectiveKey.contains("****") || "sk-...".equals(effectiveKey)) {
+            effectiveKey = aiProperties.getApi() != null ? aiProperties.getApi().getKey() : "";
+        }
+
+        // 写入 Redis（供缓存）
+        try {
+            stringRedisTemplate.opsForValue().set("ai.model", config.getModel());
+            stringRedisTemplate.opsForValue().set("ai.api.url", config.getApiUrl());
+            if (effectiveKey != null && !effectiveKey.isBlank()) {
+                stringRedisTemplate.opsForValue().set("ai.api.key", effectiveKey);
+            }
+        } catch (Exception ignored) {}
+
+        // 同步持久化到本地 redis.properties 文件，确保重启不丢失
+        try {
+            java.io.File propFile = new java.io.File("src/main/resources/redis.properties");
+            if (propFile.exists()) {
+                java.util.Properties props = new java.util.Properties();
+                try (java.io.InputStream in = new java.io.FileInputStream(propFile)) {
+                    props.load(in);
+                }
+                props.setProperty("ai.model", config.getModel().trim());
+                props.setProperty("ai.api.url", config.getApiUrl().trim());
+                if (effectiveKey != null && !effectiveKey.isBlank()) {
+                    props.setProperty("ai.api.key", effectiveKey.trim());
+                }
+                try (java.io.OutputStream out = new java.io.FileOutputStream(propFile)) {
+                    props.store(out, "Updated via Admin Dashboard");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[AdminController] 回写 redis.properties 失败: " + e.getMessage());
+        }
 
         // 热更新内存中的 AiProperties（立即生效，不需要重启）
-        aiProperties.setModel(config.getModel());
-        aiProperties.getApi().setUrl(config.getApiUrl());
-        // 如果前端传来的是脱敏值则不更新 key
-        if (!config.getApiKey().contains("****")) {
-            aiProperties.getApi().setKey(config.getApiKey());
+        aiProperties.setModel(config.getModel().trim());
+        if (aiProperties.getApi() == null) {
+            aiProperties.setApi(new com.xxzd.study.config.properties.AiProperties.Api());
         }
+        aiProperties.getApi().setUrl(config.getApiUrl().trim());
+        if (effectiveKey != null && !effectiveKey.isBlank()) {
+            aiProperties.getApi().setKey(effectiveKey.trim());
+        }
+
+        System.out.println("[AdminController] 模型配置已热更新 => model=" + config.getModel() + ", url=" + config.getApiUrl() + ", key=" + (effectiveKey != null && effectiveKey.length() > 6 ? effectiveKey.substring(0, 6) + "..." : "empty"));
 
         return ApiResponse.ok("模型配置已更新，立即生效", null);
     }
@@ -122,16 +157,17 @@ public class AdminController {
         List<ModelPreset> presets = new ArrayList<>();
 
         // 本地模型（Ollama / LM Studio）
-        presets.add(new ModelPreset("local-lmstudio", "LM Studio (本地)", "http://localhost:1234", "本地", "lm-studio"));
-        presets.add(new ModelPreset("local-ollama", "Ollama (本地)", "http://localhost:11434", "本地", "ollama"));
+        presets.add(new ModelPreset("local-lmstudio", "gemma-4-e4b-it", "LM Studio (本地)", "http://localhost:1234", "本地 · LM Studio", "lm-studio"));
+        presets.add(new ModelPreset("local-ollama", "qwen2.5:7b", "Ollama (本地)", "http://localhost:11434", "本地 · Ollama", "ollama"));
 
-        // 主流云模型 OpenAI 兼容协议
-        presets.add(new ModelPreset("openai-gpt4o", "GPT-4o", "https://api.openai.com/v1", "云端 · OpenAI", "sk-..."));
-        presets.add(new ModelPreset("deepseek-v3", "DeepSeek V3", "https://api.deepseek.com/v1", "云端 · DeepSeek", "sk-..."));
-        presets.add(new ModelPreset("qwen-turbo", "Qwen-Turbo (通义千问)", "https://dashscope.aliyuncs.com/compatible-mode/v1", "云端 · 阿里", "sk-..."));
-        presets.add(new ModelPreset("glm4-plus", "GLM-4-Plus (智谱)", "https://open.bigmodel.cn/api/paas/v4", "云端 · 智谱", "..."));
-        presets.add(new ModelPreset("gemini-2.5-pro", "Gemini 2.5 Pro (中转)", "https://new.lemonapi.site/v1", "云端 · Google", "sk-..."));
-        presets.add(new ModelPreset("moonshot-v1", "Kimi (月之暗面)", "https://api.moonshot.cn/v1", "云端 · 月之暗面", "sk-..."));
+        // 当前默认/测试可用的接口中转
+        presets.add(new ModelPreset("remote-deepseek", "deepseek-v4-pro", "DeepSeek V4 Pro (中转)", "https://api.fanjinkai.online/v1", "云端中转", "sk-b5158ebc7b0f4f9db899c13f5ad6f8a3"));
+        presets.add(new ModelPreset("remote-lemon", "gemini-2.5-pro", "Gemini 2.5 Pro (中转)", "https://new.lemonapi.site/v1", "云端中转", "sk-..."));
+
+        // 官方云端模型
+        presets.add(new ModelPreset("deepseek-official", "deepseek-chat", "DeepSeek 官方 API", "https://api.deepseek.com/v1", "官方云端", "sk-..."));
+        presets.add(new ModelPreset("openai-gpt4o", "gpt-4o", "OpenAI GPT-4o", "https://api.openai.com/v1", "官方云端", "sk-..."));
+        presets.add(new ModelPreset("qwen-turbo", "qwen-turbo", "通义千问 (Qwen)", "https://dashscope.aliyuncs.com/compatible-mode/v1", "官方云端", "sk-..."));
 
         return ApiResponse.ok(presets);
     }
@@ -341,13 +377,15 @@ public class AdminController {
 
     public static class ModelPreset {
         private final String id;
+        private final String model;
         private final String name;
         private final String apiUrl;
         private final String category;
         private final String apiKeyHint;
 
-        public ModelPreset(String id, String name, String apiUrl, String category, String apiKeyHint) {
+        public ModelPreset(String id, String model, String name, String apiUrl, String category, String apiKeyHint) {
             this.id = id;
+            this.model = model;
             this.name = name;
             this.apiUrl = apiUrl;
             this.category = category;
@@ -355,6 +393,7 @@ public class AdminController {
         }
 
         public String getId() { return id; }
+        public String getModel() { return model; }
         public String getName() { return name; }
         public String getApiUrl() { return apiUrl; }
         public String getCategory() { return category; }

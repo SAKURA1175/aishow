@@ -11,6 +11,9 @@
         <result property="fileType" column="file_type"/>
         <result property="rawText" column="raw_text"/>
         <result property="structuredJson" column="structured_json"/>
+        <result property="targetRole" column="target_role"/>
+        <result property="gapAnalysis" column="gap_analysis"/>
+        <result property="canvaData" column="canva_data"/>
         <result property="analysisJson" column="analysis_json"/>
         <result property="score" column="score"/>
         <result property="createTime" column="create_time"/>
@@ -23,6 +26,7 @@
         <result property="userId" column="user_id"/>
         <result property="filename" column="filename"/>
         <result property="fileType" column="file_type"/>
+        <result property="targetRole" column="target_role"/>
         <result property="score" column="score"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
@@ -35,13 +39,13 @@
     </insert>
 
     <select id="selectById" resultMap="BaseResultMap">
-        SELECT id, user_id, filename, file_type, raw_text, structured_json, analysis_json, score, create_time, update_time
+        SELECT id, user_id, filename, file_type, raw_text, structured_json, target_role, gap_analysis, canva_data, analysis_json, score, create_time, update_time
         FROM resume
         WHERE id = #{id}
     </select>
 
     <select id="selectByUserId" resultMap="ListResultMap">
-        SELECT id, user_id, filename, file_type, score, create_time, update_time
+        SELECT id, user_id, filename, file_type, target_role, score, create_time, update_time
         FROM resume
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
@@ -53,6 +57,21 @@
             analysis_json   = #{analysisJson},
             score           = #{score},
             update_time     = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateGapAnalysis">
+        UPDATE resume
+        SET target_role  = #{targetRole},
+            gap_analysis = #{gapAnalysis},
+            update_time  = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateCanvaData">
+        UPDATE resume
+        SET canva_data  = #{canvaData},
+            update_time = NOW()
         WHERE id = #{id}
     </update>
 
